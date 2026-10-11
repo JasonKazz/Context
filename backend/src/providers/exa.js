@@ -9,13 +9,18 @@ async function call(endpoint,body,ctx) {
  else {ctx.metrics.estimatedCostUsd += endpoint==='search' ? .007 : .001;ctx.metrics.costNotes.add('Exa fallback estimate: fast search $0.007; content $0.001/page.');}
  return result;
 }
-export async function contents(url,ctx) {
- const result=await call('contents',{ids:[url],text:{maxCharacters:10000},livecrawl:'fallback',livecrawlTimeout:1500},ctx);
+export async function contents(url,ctx,maxCharacters=10000) {
+ const result=await call('contents',{ids:[url],text:{maxCharacters},livecrawl:'fallback',livecrawlTimeout:1500},ctx);
  const item=result.results?.[0];
  if(!item || !(item.text||item.title)) throw new AppError('RETRIEVAL_UNAVAILABLE','This page is unavailable to the public index. Upload a short clip or paste its spoken quote.',422);
- return {title:String(item.title||'').slice(0,400),text:String(item.text||'').slice(0,10000),url:item.url||url};
+ return {title:String(item.title||'').slice(0,400),text:String(item.text||'').slice(0,maxCharacters),url:item.url||url};
 }
 export async function search(query,ctx) {
  const result=await call('search',{query,type:'fast',numResults:5,contents:{text:{maxCharacters:15000},highlights:{numSentences:3}}},ctx);
  return result.results || [];
+}
+
+export async function videos(query,ctx) {
+ const result=await call('search',{query:`${query.slice(0,300)} full speech full interview recording`,type:'fast',numResults:4,includeDomains:['youtube.com','vimeo.com','c-span.org'],contents:{text:{maxCharacters:16000}}},ctx);
+ return result.results||[];
 }

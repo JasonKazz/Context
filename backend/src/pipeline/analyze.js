@@ -6,9 +6,12 @@ import * as gemini from '../providers/gemini.js';
 import {audioPart} from '../media.js';
 import {rank} from './ranking.js';
 import {discoveryQueries} from './queries.js';
+import {addAlignment} from './alignment.js';
+import {emptyAssessment} from './assessment.js';
+import {videoCandidates} from './videos.js';
 export async function analyze(input,{signal,onUpdate=()=>{},deadline=Date.now()+config.deadlineMs,providers={exa,gemini}}={}) {
  const started=Date.now();const metrics={calls:{exa:0,gemini:0},inputTokens:0,outputTokens:0,estimatedCostUsd:0,exaReportedCostUsd:0,costNotes:new Set(),stages:[]};
- const result={status:'inconclusive',summary:'No source candidate has been established.',context:[],candidates:[],warnings:[],extraction:null,verification:'Not performed. Indexed text and model interpretations do not prove recording identity.',originality:'Earliest original unknown.'};
+ const result={status:'inconclusive',summary:'No source candidate has been established.',context:[],candidates:[],videoCandidates:[],assessment:emptyAssessment(),warnings:[],extraction:null,verification:'Not performed. Indexed text and model interpretations do not prove recording identity.',originality:'Earliest original unknown.'};
  const remaining=()=>deadline-Date.now();
  const snapshot=()=>({...result,metrics:{...metrics,costNotes:[...metrics.costNotes],elapsedMs:Date.now()-started}});
  async function stage(name,limit,work) {
@@ -57,14 +60,38 @@ export async function analyze(input,{signal,onUpdate=()=>{},deadline=Date.now()+
    for(const item of settled) if(item.status==='rejected') result.warnings.push(publicError(item.reason).message);
    return settled.flatMap(x=>x.status==='fulfilled'?x.value:[]);
   });
-  result.candidates=rank(results,queries,url);
-  if(!result.candidates.length) {result.summary='No supporting source candidate was found within this search. Try a more distinctive spoken quote or another clip.';return snapshot();}
-  result.status='candidate';result.summary='Public search returned possible sources with indexed text. Their relationship to the clip and any change in meaning remain unverified.';
+  let ranked=rank(results,queries,url);
+  result.candidates=ranked.map(c=>addAlignment(c,result.extraction.transcript,result.extraction.basis));
+  if(!result.candidates.length)result.summary='No supporting source candidate was found within this search. Try a more distinctive spoken quote or another clip.';
+  if(result.candidates.length){result.status='candidate';result.summary='Possible sources found. Text alignment shows which provisional words occur in retrieved text; recording identity remains unchecked.';}
   onUpdate({stage:'Candidates available',result:snapshot()});
+  if(remaining()>3500&&(providers.exa.contents||providers.exa.videos)) {
+   try {
+    await stage('Locating surrounding text and video candidates',Math.min(3000,remaining()-2500),async ctx=>{
+     const work=[];
+     if(ranked[0]&&providers.exa.contents)work.push((async()=>{
+      const page=await providers.exa.contents(ranked[0].url,ctx,60000);
+      if(page.text?.length>ranked[0].sourceText.length)ranked[0]={...ranked[0],sourceText:page.text};
+      result.candidates=ranked.map(c=>addAlignment(c,result.extraction.transcript,result.extraction.basis));
+      onUpdate({stage:'Source passages located',result:snapshot()});
+     })());
+     if(providers.exa.videos)work.push((async()=>{
+      // The candidate title is a discovery clue, not a reference answer or verification.
+      const query=ranked[0]?.title||queries[1]||queries[0];
+      const found=await providers.exa.videos(query,ctx);
+      result.videoCandidates=videoCandidates(found,result.extraction,url);
+      onUpdate({stage:'Video candidates available',result:snapshot()});
+     })());
+     const settled=await Promise.allSettled(work);
+     for(const item of settled)if(item.status==='rejected')result.warnings.push(publicError(item.reason).message);
+    });
+   }catch(error){result.warnings.push(publicError(error).message);}
+  } else result.warnings.push('Not enough time remained to retrieve additional context or search for full-video candidates.');
+  if(!result.candidates.length){result.summary=result.videoCandidates.length?'Possible video links were found, but no supporting source-text passage was established.':'No supporting source candidate was found. Try a distinctive spoken quote.';return snapshot();}
   if(remaining()>700) {
    try {
     const report=await stage('Writing evidence-based report',Math.min(4500,remaining()-150),ctx=>providers.gemini.summarize(result.extraction,result.candidates,ctx));
-    if(report.summary) result.summary=report.summary;result.context=report.context;
+    if(report.summary) result.summary=report.summary;result.context=report.context;result.assessment=report.assessment||emptyAssessment();
    } catch(error){result.warnings.push(publicError(error).message);}
   } else result.warnings.push('The deadline left no time for a model-written summary; source evidence is available.');
  } catch(error) {

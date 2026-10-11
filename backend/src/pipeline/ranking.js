@@ -18,7 +18,7 @@ export function rank(results,queries,inputUrl='') {
   let start=0,best=-1;
   for(let i=0;i<evidence.length;i+=250){const window=evidence.slice(i,i+1000);const tokens=new Set(words(window));const score=[...terms].filter(t=>tokens.has(t)).length;if(score>best){best=score;start=Math.max(0,i-200);}}
   const excerpt=evidence.slice(start,start+1800);
-  ranked.push({title:String(item.title||new URL(url).hostname).slice(0,300),url,excerpt,evidenceKind:text?'indexed_text':'search_highlight',support:exact?'A searched phrase occurs in the indexed text.':`Shared search terms: ${found.slice(0,8).join(', ')}.`,verification:'unverified',score:found.length+(exact?100:0)});
+  ranked.push({title:String(item.title||new URL(url).hostname).slice(0,300),url,excerpt,evidenceKind:text?'indexed_text':'search_highlight',support:exact?'A searched phrase occurs in the indexed text.':`Shared search terms: ${found.slice(0,8).join(', ')}.`,verification:'unverified',sourceText:evidence,score:found.length+(exact?100:0)});
  }
  return ranked.sort((a,b)=>b.score-a.score).slice(0,3).map(({score,...candidate})=>candidate);
 }
