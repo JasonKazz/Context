@@ -8,7 +8,7 @@ import {rank} from './ranking.js';
 import {discoveryQueries} from './queries.js';
 import {addAlignment} from './alignment.js';
 import {emptyAssessment} from './assessment.js';
-import {videoCandidates} from './videos.js';
+import {videoCandidates,videoQuery} from './videos.js';
 export async function analyze(input,{signal,onUpdate=()=>{},deadline=Date.now()+config.deadlineMs,providers={exa,gemini}}={}) {
  const started=Date.now();const metrics={calls:{exa:0,gemini:0},inputTokens:0,outputTokens:0,estimatedCostUsd:0,exaReportedCostUsd:0,costNotes:new Set(),stages:[]};
  const result={status:'inconclusive',summary:'No source candidate has been established.',context:[],candidates:[],videoCandidates:[],assessment:emptyAssessment(),warnings:[],extraction:null,verification:'Not performed. Indexed text and model interpretations do not prove recording identity.',originality:'Earliest original unknown.'};
@@ -77,7 +77,7 @@ export async function analyze(input,{signal,onUpdate=()=>{},deadline=Date.now()+
      })());
      if(providers.exa.videos)work.push((async()=>{
       // The candidate title is a discovery clue, not a reference answer or verification.
-      const query=ranked[0]?.title||queries[1]||queries[0];
+      const query=videoQuery(result.candidates,result.extraction);
       const found=await providers.exa.videos(query,ctx);
       result.videoCandidates=videoCandidates(found,result.extraction,url);
       onUpdate({stage:'Video candidates available',result:snapshot()});

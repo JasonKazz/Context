@@ -1,7 +1,7 @@
 import {validateInput,MAX_FILE_BYTES} from '/shared/contracts.js';
 const $=id=>document.getElementById(id);
 let current=null,pollTimer,clockTimer,requestKey=null;
-const labels={candidate:'Unverified source candidates',inconclusive:'Inconclusive',input_error:'Input / retrieval error'};
+const labels={candidate:'Source candidates — see evidence levels',inconclusive:'Inconclusive',input_error:'Input / retrieval error'};
 function text(tag,value,className){const node=document.createElement(tag);node.textContent=value;if(className)node.className=className;return node;}
 function clearTimers(){clearTimeout(pollTimer);clearInterval(clockTimer);}
 function render(job){
@@ -14,16 +14,65 @@ function render(job){
  $('report').hidden=false;$('outcome').textContent=labels[result.status]||'Inconclusive';$('summary').textContent=result.summary;
  $('extraction').replaceChildren();
  if(result.extraction){const details=document.createElement('details');details.className='card';details.append(text('summary',`Discovery clues · ${result.extraction.basis.replaceAll('_',' ')}`),text('p',result.extraction.description||''));if(result.extraction.transcript)details.append(text('blockquote',result.extraction.transcript));details.append(text('p',`Search queries: ${(result.extraction.queries||[]).join(' / ')}`,'hint'));$('extraction').append(details);}
- $('candidates').replaceChildren();
- for(const [index,candidate] of (result.candidates||[]).entries()){
-  const card=text('article','','card');card.append(text('span',`Source ${index+1} · ${candidate.evidenceKind.replaceAll('_',' ')} · unverified`,'source-tag'));
-  const heading=text('h3','');const link=text('a',candidate.title);try{const url=new URL(candidate.url);if(['http:','https:'].includes(url.protocol)){link.href=url.href;link.target='_blank';link.rel='noopener noreferrer';}}catch{}heading.append(link);card.append(heading,text('p',candidate.support),text('blockquote',candidate.excerpt));$('candidates').append(card);
- }
- if(!result.candidates?.length)$('candidates').append(text('p','No supporting candidate was found. Try a distinctive spoken quote.'));
+ renderCandidates(result);
+ renderVideos(result);
+ renderAssessment(result);
  $('context').replaceChildren();
  if(result.context?.length){$('context').append(text('h3','Potential context · AI interpretation'));for(const item of result.context){const card=text('article','','card');card.append(text('span',`From source ${item.sourceId}`,'source-tag'),text('blockquote',item.quote),text('p',item.explanation));$('context').append(card);}}
  $('warnings').replaceChildren(...[...new Set(result.warnings||[])].map(w=>text('p',w)));$('warnings').hidden=!result.warnings?.length;
  $('metrics').textContent=JSON.stringify(result.metrics||{elapsedMs:job.elapsedMs},null,2);
+}
+function linkTo(url,title){
+ const link=text('a',title);try{const parsed=new URL(url);if(['https:','http:'].includes(parsed.protocol)){link.href=parsed.href;link.target='_blank';link.rel='noopener noreferrer';}}catch{}return link;
+}
+function highlighted(value,ranges){
+ const paragraph=text('div','','passage');let cursor=0;
+ for(const range of [...ranges].sort((a,b)=>a.start-b.start)){
+  if(!Number.isInteger(range.start)||!Number.isInteger(range.end)||range.start<cursor||range.end<=range.start||range.end>value.length)continue;
+  paragraph.append(document.createTextNode(value.slice(cursor,range.start)));const mark=text('mark',value.slice(range.start,range.end));paragraph.append(mark);cursor=range.end;
+ }
+ paragraph.append(document.createTextNode(value.slice(cursor)));return paragraph;
+}
+function renderCandidates(result){
+ $('candidates').replaceChildren();
+ for(const [index,candidate] of (result.candidates||[]).entries()){
+  const card=text('article','','card source-card');
+  card.append(text('span',`Source ${index+1} · ${candidate.evidenceKind.replaceAll('_',' ')}`,'source-tag'),text('p',candidate.evidence?.label||'Possible source — recording not checked',`evidence-label ${candidate.evidence?.level||'related'}`));
+  const heading=text('h3','');heading.append(linkTo(candidate.url,candidate.title));card.append(heading,text('p',candidate.evidence?.reason||candidate.support,'hint'));
+  const alignment=candidate.alignment;
+  if(alignment?.matches.length&&result.extraction?.transcript){
+   const details=document.createElement('details');details.open=index===0;details.append(text('summary',`Compare matched words · ${alignment.matches.length} matching passage${alignment.matches.length===1?'':'s'}`));
+   const columns=text('div','','comparison');const clip=text('div','','comparison-column');const source=text('div','','comparison-column');
+   clip.append(text('h4',result.extraction.basis==='user_quote'?'Your supplied quote':'Clip transcript · provisional'),highlighted(result.extraction.transcript,alignment.matches.map(m=>({start:m.clipStart,end:m.clipEnd}))));
+   source.append(text('h4','Matching source passages + surrounding text'));
+   for(const [i,passage] of alignment.passages.entries()){
+    source.append(text('p',`Passage ${i+1}${passage.hasEarlierText?' · earlier source text not shown':''}`,'hint'),highlighted(passage.text,[{start:passage.highlightStart,end:passage.highlightEnd}]));
+   }
+   columns.append(clip,source);details.append(columns,text('p',alignment.method,'hint'));
+   if(alignment.matches.some(m=>m.ambiguous))details.append(text('p','Some wording repeats in this source, so its location is ambiguous.','notice'));
+   card.append(details);
+   for(const gap of alignment.gaps){const details=document.createElement('details');details.className='gap';details.append(text('summary',`Possible intervening text · ${gap.wordCount} words`),text('p','This source has text between two nearby clip-transcript matches. Editing is one possible explanation; another recording or transcription differences could also explain it.','hint'),text('blockquote',gap.text));if(gap.truncated)details.append(text('p','Long passage truncated; open the source for the rest.','hint'));card.append(details);}
+   if(alignment.reorders.length)card.append(text('p','Possible reordered passages: nearby clip-transcript segments occur in a different order in this source. This does not establish a video edit or intent.','gap'));
+  }else card.append(text('blockquote',candidate.excerpt));
+  $('candidates').append(card);
+ }
+ if(!result.candidates?.length)$('candidates').append(text('p','No supporting text candidate was found. Try a distinctive spoken quote.'));
+}
+function renderVideos(result){
+ $('videos').replaceChildren();$('videos').append(text('h2','Possible longer recordings'));
+ if(!result.videoCandidates?.length){$('videos').append(text('p','No additional video candidate is available from this run.','hint'));return;}
+ $('videos').append(text('p','Public video-search results. Full length, exact event and recording identity are not confirmed.','hint'));
+ const grid=text('div','','video-grid');
+ for(const candidate of result.videoCandidates){const card=text('article','','card');card.append(text('span',candidate.evidence?.level==='related'?'Search lead only':'Matching indexed words · video not checked','source-tag'));const title=text('h3','');title.append(linkTo(candidate.url,candidate.title));card.append(title,text('p',candidate.evidence?.reason||candidate.support,'hint'),linkTo(candidate.url,'Open video ↗'));grid.append(card);}
+ $('videos').append(grid);
+}
+function renderAssessment(result){
+ const assessment=result.assessment;$('assessment').replaceChildren();if(!assessment)return;
+ $('assessment').append(text('h2','Could the missing context change the meaning?'));
+ const titles={insufficient_evidence:'Insufficient evidence to assess',potential_context_difference:'Potential context difference · AI interpretation',no_material_change_found:'No material change identified in these excerpts'};
+ const card=text('div','','card');card.append(text('h3',titles[assessment.status]||titles.insufficient_evidence),text('p',assessment.reason||''),text('p',assessment.intent,'intent-note'));
+ for(const finding of assessment.findings||[]){const box=text('div','','finding');box.append(text('p',`Source ${finding.sourceId} · ${finding.kind.replaceAll('_',' ')}`,'source-tag'));const pair=text('div','','comparison');const clip=text('div','');clip.append(text('h4','Clip wording'),text('blockquote',finding.clipQuote));const source=text('div','');source.append(text('h4','Source wording'),text('blockquote',finding.sourceQuote));pair.append(clip,source);box.append(pair,text('p',finding.effect));card.append(box);}
+ card.append(text('p',assessment.scope,'hint'));$('assessment').append(card);
 }
 async function poll(id){
  try{const res=await fetch(`/api/jobs/${id}`,{signal:AbortSignal.timeout(4000)});const data=await res.json();if(!res.ok)throw new Error(data.message);render(data);if(data.state==='running')pollTimer=setTimeout(()=>poll(id),400);else clearTimers();}

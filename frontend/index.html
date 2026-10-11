@@ -16,9 +16,9 @@
 <p id="error" role="alert"></p>
 <section id="report" hidden>
 <div class="report-heading"><h2>Your report</h2><button id="download" class="secondary" type="button">Download JSON</button></div>
-<div class="card"><span id="outcome" class="pill"></span><h3>What we found</h3><p id="summary"></p><p class="hint">AI interpretation of retrieved evidence. Recording identity, surrounding context and earliest-original status have not been independently verified.</p></div>
-<div id="extraction"></div><div id="context"></div><h3>Possible sources</h3><div id="candidates"></div><div id="warnings" class="notice"></div>
+<div class="card"><span id="outcome" class="pill"></span><h3>What we found</h3><p id="summary"></p><p class="hint">Text highlights are computed from the retrieved words. The clip transcript may contain errors. Recording identity and earliest-original status are not verified.</p></div>
+<div id="extraction"></div><section id="videos"></section><section id="assessment"></section><h2>Compare the evidence</h2><p class="hint">Green highlights = matching word sequences. Amber = possible intervening source text. These are text comparisons, not confirmed video edits.</p><div id="candidates"></div><div id="context"></div><div id="warnings" class="notice"></div>
 <details class="card"><summary>Timing, calls & estimated cost</summary><pre id="metrics"></pre></details>
 </section>
-<footer>No confidence percentages. No “verified” badge without verification. A matching upload is not necessarily the earliest original.</footer>
+<footer>Evidence labels describe the checks completed, not a confidence percentage. Matching words do not establish intent or prove the earliest original.</footer>
 </main></body></html>

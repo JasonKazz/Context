@@ -11,3 +11,8 @@ export function videoCandidates(results,extraction,inputUrl='') {
   return [addAlignment({url:canonical,title,excerpt:sourceText.slice(0,1200),sourceText,evidenceKind:'video_indexed_text',support:'Returned by a search for a longer recording. Duration, completeness and recording identity have not been checked.',verification:'unverified',fullLengthVerified:false},extraction.transcript,extraction.basis)];
  }).sort((a,b)=>b.alignment.matchedWords-a.alignment.matchedWords).slice(0,3);
 }
+
+export function videoQuery(candidates,extraction){
+ const matched=candidates.find(c=>c.alignment?.matches.length);
+ return matched?`${matched.title} ${extraction.description||''}`.slice(0,300):(extraction.queries[1]||extraction.queries[0]);
+}

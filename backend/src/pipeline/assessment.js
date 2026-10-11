@@ -19,6 +19,7 @@ export function validateReport(raw,extraction,candidates) {
    if(item.kind==='possible_reordering'&&!candidate.alignment.reorders.length)return [];
    return [{sourceId:Number(item.sourceId),kind:item.kind,sourceQuote:item.sourceQuote,clipQuote:item.clipQuote,effect:typeof item.effect==='string'?item.effect.slice(0,1000):''}];
   }).slice(0,3);
+  if(!findings.length)assessment=emptyAssessment('Matching text was found, but no supported conclusion about changed meaning was produced. This does not establish that the meaning is unchanged.');
   if(findings.length)assessment={...assessment,status:findings.some(f=>f.kind!=='no_material_change')?'potential_context_difference':'no_material_change_found',findings,reason:'AI interpretation anchored to displayed clip and source quotations; not a finding of deception.'};
  }
  return {summary:typeof raw.summary==='string'?raw.summary.slice(0,1600):'',context,assessment};

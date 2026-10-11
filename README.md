@@ -23,6 +23,12 @@ Node 22.13+ (tested on Node 26). `ffmpeg` is needed only for uploaded media. No 
 
 All suggestions are **unverified candidates**. Excerpts come from public indexed content. AI report quotes are checked against retrieved excerpts; interpretations can still be wrong. No original-recording verification, earliest-upload determination or comprehensive fact-checking. The service uses a 17-second deadline; upload/network/render time is additional. Real accuracy and end-to-end latency require benchmarks.
 
+## Passage comparisons
+
+The report highlights exact runs of at least six words in the provisional clip transcript and retrieved source text. Evidence labels explain matching word counts, not confidence percentages. Adjacent clip passages separated in a source can expose possible omissions or reordered text; these are not confirmed video edits. The AI context assessment accepts only quotations found verbatim in supplied evidence, and may return insufficient evidence. It cannot determine malicious intent.
+
+A bounded parallel search adds possible longer video links. Their full length and recording identity remain unchecked. No full candidate videos are downloaded or transcribed.
+
 ## Architecture
 
 - `frontend/`: buildless HTML/CSS/JS, polling and cancellation; no credentials.

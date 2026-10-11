@@ -32,3 +32,9 @@ test('video links are provider results, never invented timestamps or verified fu
  const results=videoCandidates([{url:'https://youtu.be/abcdefghijk',title:'Full speech',text:full},{url:'https://evil.example/video',title:'Other',text:full},{url:'javascript:alert(1)',text:full}],{transcript:first,basis:'user_quote'});
  assert.equal(results.length,1);assert.equal(results[0].fullLengthVerified,false);assert.equal(results[0].url,'https://www.youtube.com/watch?v=abcdefghijk');assert.equal(results[0].evidence.level,'text_match');
 });
+
+test('video queries cannot treat an unrelated top article as the identified event',async()=>{
+ const {videoQuery}=await import('../backend/src/pipeline/videos.js');
+ const query=videoQuery([{title:'Unrelated convention',alignment:{matches:[]}}],{queries:['spoken phrase','distinctive tail speaker'],description:'speaker'});
+ assert.equal(query,'distinctive tail speaker');
+});
