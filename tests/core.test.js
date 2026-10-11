@@ -48,3 +48,8 @@ test('jobs deduplicate, expire, cancel and survive refresh/restart without repro
   store.db.close();const reopened=new JobStore({directory,run,deadlineMs:40});assert.equal(reopened.get(a.id).state,'expired');assert.equal(calls,2);reopened.db.close();
  }finally{await rm(directory,{recursive:true,force:true});}
 });
+
+test('weak generic overlaps are not source candidates',()=>{
+ const result=rank([{url:'https://example.com/unrelated',title:'Unrelated',text:'The president gave a speech. This is another thing that happened.'}],['president gave an honorary visiting professor speech']);
+ assert.equal(result.length,0);
+});

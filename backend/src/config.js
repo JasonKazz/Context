@@ -13,7 +13,7 @@ export const config = Object.freeze({
  deadlineMs: integer('ANALYSIS_DEADLINE_MS',17000,17000),
  maxUploadBytes: integer('MAX_UPLOAD_BYTES',8388608,20971520),
  geminiApiKey: process.env.GEMINI_API_KEY || '', exaApiKey: process.env.EXA_API_KEY || '',
- geminiModel: process.env.GEMINI_MODEL || 'gemini-2.5-flash-lite',
+ geminiModel: process.env.GEMINI_MODEL || 'gemini-3.5-flash-lite',
  ffmpeg: process.env.FFMPEG_PATH || 'ffmpeg',
  dataDir: resolve(root, 'work'),
 });

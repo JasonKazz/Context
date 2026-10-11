@@ -16,6 +16,6 @@ export async function contents(url,ctx) {
  return {title:String(item.title||'').slice(0,400),text:String(item.text||'').slice(0,10000),url:item.url||url};
 }
 export async function search(query,ctx) {
- const result=await call('search',{query,type:'fast',numResults:5,contents:{text:{maxCharacters:5000},highlights:{numSentences:3}}},ctx);
+ const result=await call('search',{query,type:'fast',numResults:5,contents:{text:{maxCharacters:15000},highlights:{numSentences:3}}},ctx);
  return result.results || [];
 }

@@ -39,7 +39,7 @@ export async function analyze(input,{signal,onUpdate=()=>{},deadline=Date.now()+
    try {
     const extraction=await stage('Extracting discovery clues',yt?7000:5000,ctx=>providers.gemini.extract(parts,ctx));
     if(!extraction.queries.length) throw new AppError('NO_CLUES','No usable speech or identifying text was extracted. Upload a short clip or paste its words.',422);
-    result.extraction={...extraction,basis:metadata?'indexed_page':input.media?'uploaded_audio':'youtube_segment'};
+    result.extraction={...extraction,transcript:metadata?'':extraction.transcript,basis:metadata?'indexed_page':input.media?'uploaded_audio':'youtube_segment'};
    } catch(error) {
     if(signal?.aborted) throw error;
     result.warnings.push(publicError(error).message);
@@ -49,7 +49,9 @@ export async function analyze(input,{signal,onUpdate=()=>{},deadline=Date.now()+
     result.warnings.push('Fallback uses the page title only. Candidate relevance may be weak; the video was not transcribed.');
    }
   }
-  const queries=result.extraction.queries;
+  const queries=[...result.extraction.queries];
+  if(queries.length>1&&result.extraction.description&&!['user_quote','title_only'].includes(result.extraction.basis))queries[1]=`${queries[1]} ${result.extraction.description}`.slice(0,350);
+  result.extraction.queries=queries;
   const results=await stage('Searching public indexes',4000,async ctx=>{
    const settled=await Promise.allSettled(queries.slice(0,2).map(q=>providers.exa.search(q,ctx)));
    for(const item of settled) if(item.status==='rejected') result.warnings.push(publicError(item.reason).message);
