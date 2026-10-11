@@ -83,9 +83,11 @@ export async function analyze(input,{signal,onUpdate=()=>{},deadline=Date.now()+
    try {
     await stage('Locating surrounding text and video candidates',Math.min(5000,remaining()-4000),async ctx=>{
      const work=[];
-     if(ranked[0]&&providers.exa.contents)work.push((async()=>{
-      const page=await providers.exa.contents(ranked[0].url,ctx,60000);
-      if(page.text?.length>ranked[0].sourceText.length)ranked[0]={...ranked[0],sourceText:page.text};
+     if(providers.exa.contents)for(const candidate of ranked.slice(0,3))work.push((async()=>{
+      const page=await providers.exa.contents(candidate.url,ctx,60000);
+      const index=ranked.findIndex(c=>c.url===candidate.url);
+      if(page.text?.length>candidate.sourceText.length)ranked[index]={...candidate,sourceText:page.text};
+      results.push(page);
       result.candidates=ranked.map(c=>addAlignment(c,result.extraction.transcript,result.extraction.basis));
       onUpdate({stage:'Source passages located',result:snapshot()});
      })());
@@ -98,6 +100,10 @@ export async function analyze(input,{signal,onUpdate=()=>{},deadline=Date.now()+
       const searches=await Promise.allSettled([providers.exa.videos(query,ctx),...(providers.exa.eventSources?[providers.exa.eventSources(query+' full transcript video',ctx)]:[])]);
       const found=searches.flatMap(s=>s.status==='fulfilled'?s.value:[]);
       for(const s of searches)if(s.status==='rejected')result.warnings.push(publicError(s.reason).message);
+      if(providers.exa.publisherVideos){
+       const publishers=found.filter(page=>{try{return /\.(gov|edu)$/.test(new URL(page.url).hostname)&&addAlignment({sourceText:page.text||''},result.extraction.transcript,result.extraction.basis).alignment.matchedWords>=6;}catch{return false;}}).sort((a,b)=>Number(new URL(b.url).hostname.includes('archives'))-Number(new URL(a.url).hostname.includes('archives')));
+       if(publishers[0])try{found.push(...await providers.exa.publisherVideos(query,new URL(publishers[0].url).hostname,ctx));}catch{result.warnings.push('Publisher recording search did not complete within its budget.');}
+      }
       results.push(...found);
       result.videoCandidates=videoCandidates([...found,...result.videoCandidates.map(c=>({...c,text:c.sourceText}))],result.extraction,url,result.eventClue?.query||'');
       onUpdate({stage:'Video candidates available',result:snapshot()});

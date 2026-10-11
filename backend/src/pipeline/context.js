@@ -17,14 +17,16 @@ export function contextOptions(candidates,transcript=''){
  });
  return out.sort((a,b)=>Number(b.recordingTranscript)-Number(a.recordingTranscript)||a.distance-b.distance).slice(0,12).map(({distance,...item})=>item);
 }
+function compactQuery(value){const seen=new Set();return (value.match(/[\p{L}\p{N}]+/gu)||[]).filter(word=>{const key=word.toLowerCase();if(seen.has(key))return false;seen.add(key);return true;}).slice(0,40).join(' ');}
 export function fallbackEvent(candidates,extraction){
  for(const c of candidates){if(extraction.transcript&&!c.alignment?.matches.length)continue;
-  const passages=[c.excerpt,c.alignment?.continuous?.text,...(c.alignment?.passages||[]).map(p=>p.text)].filter(Boolean);
+  const passages=[c.title,c.excerpt,c.alignment?.continuous?.text,...(c.alignment?.passages||[]).map(p=>p.text)].filter(Boolean);
   for(const p of passages){for(const match of p.matchAll(/[^.!?\n]{0,300}(?:rally|commencement|interview|address|conference|speech)[^.!?\n]{0,300}/gi)){
    const quote=match[0].trim();if(!/\b(?:20\d{2}|19\d{2})\b/.test(quote))continue;
-   return {query:quote.slice(0,480)+' full speech video transcript',supportingQuote:quote,method:'source_sentence'};
+   const titles=candidates.filter(x=>!extraction.transcript||x.alignment?.matches.length).map(x=>x.title.split(/ \| | - American Rhetoric/)[0]).join(' ');
+   return {query:compactQuery(quote+' '+titles+' full speech video transcript'),supportingQuote:quote,supportingTitles:candidates.map(x=>x.title),method:'source_sentence'};
   }}
  }
  const source=candidates.find(c=>c.alignment?.matches.length)||(!extraction.transcript&&candidates[0]);if(!source)return null;
- return {query:`${source.title} ${extraction.queries?.[0]||''} full speech transcript video`.slice(0,550),supportingQuote:source.title,method:'source_title_fallback'};
+ return {query:compactQuery(`${candidates.filter(c=>!extraction.transcript||c.alignment?.matches.length).map(c=>c.title.split(/ \| | - American Rhetoric/)[0]).join(' ')} full speech video`),supportingQuote:source.title,method:'source_title_fallback'};
 }

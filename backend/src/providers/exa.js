@@ -10,10 +10,10 @@ async function call(endpoint,body,ctx) {
  return result;
 }
 export async function contents(url,ctx,maxCharacters=10000) {
- const result=await call('contents',{ids:[url],text:{maxCharacters},livecrawl:'fallback',livecrawlTimeout:1500},ctx);
+ const result=await call('contents',{ids:[url],text:{maxCharacters},extras:{links:20},livecrawl:'fallback',livecrawlTimeout:1500},ctx);
  const item=result.results?.[0];
  if(!item || !(item.text||item.title)) throw new AppError('RETRIEVAL_UNAVAILABLE','This page is unavailable to the public index. Upload a short clip or paste its spoken quote.',422);
- return {title:String(item.title||'').slice(0,400),text:String(item.text||'').slice(0,maxCharacters),url:item.url||url};
+ return {title:String(item.title||'').slice(0,400),text:String(item.text||'').slice(0,maxCharacters),url:item.url||url,extras:item.extras};
 }
 export async function search(query,ctx) {
  const result=await call('search',{query,type:'fast',numResults:5,contents:{text:{maxCharacters:15000},highlights:{numSentences:3}}},ctx);
@@ -32,5 +32,11 @@ export async function videos(query,ctx) {
 // Event-specific open-web retrieval can discover transcript archives outside video hosts.
 export async function eventSources(query,ctx){
  const result=await call('search',{query:query.slice(0,600),type:'auto',numResults:5,contents:{text:{maxCharacters:90000},extras:{links:20}}},ctx);
+ return result.results||[];
+}
+
+// One bounded search on a publisher already discovered through matching source text.
+export async function publisherVideos(query,domain,ctx){
+ const result=await call('search',{query:query.slice(0,550),type:'auto',numResults:5,includeDomains:[domain],contents:{text:{maxCharacters:30000},extras:{links:20}}},ctx);
  return result.results||[];
 }

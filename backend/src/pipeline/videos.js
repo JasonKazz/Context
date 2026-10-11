@@ -3,8 +3,16 @@ import {timedPassages} from './passages.js';
 import {addAlignment} from './alignment.js';
 export function videoCandidates(results,extraction,inputUrl='',eventQuery='') {
  const seen=new Set();const inputCanonical=inputUrl?(youtubeUrl(inputUrl)||inputUrl):'';
- const linked=results.flatMap(item=>(item.extras?.links||[]).filter(link=>typeof link==='string').map(url=>({url,title:`Recording link from ${item.title||'source page'}`,linkedFrom:item.url})));
- return [...results,...linked].sort((a,b)=>String(b.text||b.sourceText||'').length-String(a.text||a.sourceText||'').length).flatMap(item=>{
+ const canon=raw=>{try{return youtubeUrl(raw)||new URL(raw).origin+new URL(raw).pathname.replace(/\/$/,'');}catch{return '';}};
+ const matchedPages=new Map(results.map(item=>[canon(item.url),addAlignment({sourceText:item.text||item.sourceText||''},extraction.transcript,extraction.basis).alignment.matchedWords]));
+ const linked=results.flatMap(item=>{
+  const links=(item.extras?.links||[]).filter(link=>typeof link==='string').flatMap(link=>{try{return [new URL(link,item.url).href];}catch{return [];}});
+  const ownWords=matchedPages.get(canon(item.url))||0;
+  const transcriptUrl=links.find(url=>(matchedPages.get(canon(url))||0)>=6);
+  const words=Math.max(ownWords,transcriptUrl?matchedPages.get(canon(transcriptUrl)):0);
+  return links.map(url=>({url,title:`Recording link from ${item.title||'source page'}`,linkedFrom:item.url,transcriptUrl,parentMatchedWords:words}));
+ });
+ return [...results,...linked].sort((a,b)=>(b.parentMatchedWords||0)-(a.parentMatchedWords||0)||String(b.text||b.sourceText||'').length-String(a.text||a.sourceText||'').length).flatMap(item=>{
   const url=safeEvidenceUrl(item.url);if(!url)return [];
   const u=new URL(url);const host=u.hostname.replace(/^www\./,'');
   const direct=['youtube.com','youtu.be','vimeo.com','c-span.org'].includes(host);
@@ -13,8 +21,8 @@ export function videoCandidates(results,extraction,inputUrl='',eventQuery='') {
   if(host==='c-span.org'&&!/^\/(program|clip|event)\//.test(u.pathname))return [];
   const canonical=youtubeUrl(url)||url;if(canonical===inputCanonical||seen.has(canonical))return [];seen.add(canonical);
   const sourceText=String(item.text||item.sourceText||'').slice(0,90000);const title=String(item.title||'Video search result').slice(0,300);
-  return [addAlignment({url:canonical,title,excerpt:sourceText.slice(0,1200),sourceText,linkedFrom:item.linkedFrom,timedPassages:timed,recordingPage:!direct,eventRelevance:eventScore(title,eventQuery),evidenceKind:direct?'video_indexed_text':'timestamped_transcript',support:'Returned by a search for a longer recording. Duration, completeness and recording identity have not been checked.',verification:'unverified',fullLengthVerified:false},extraction.transcript,extraction.basis)];
- }).sort((a,b)=>b.alignment.matchedWords-a.alignment.matchedWords||b.eventRelevance-a.eventRelevance).slice(0,5);
+  return [addAlignment({url:canonical,title,excerpt:sourceText.slice(0,1200),sourceText,linkedFrom:item.linkedFrom,transcriptUrl:item.transcriptUrl,parentMatchedWords:item.parentMatchedWords||0,timedPassages:timed,recordingPage:!direct,eventRelevance:eventScore(title,eventQuery),evidenceKind:item.parentMatchedWords>=6?'matched_transcript_link':direct?'video_indexed_text':'timestamped_transcript',support:'Returned by a search for a longer recording. Duration, completeness and recording identity have not been checked.',verification:'unverified',fullLengthVerified:false},extraction.transcript,extraction.basis)];
+ }).sort((a,b)=>Math.max(b.alignment.matchedWords,b.parentMatchedWords||0)-Math.max(a.alignment.matchedWords,a.parentMatchedWords||0)||b.eventRelevance-a.eventRelevance).slice(0,5);
 }
 
 export function videoQuery(candidates,extraction){
