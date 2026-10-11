@@ -1,4 +1,5 @@
 import {archiveRecordingLinks} from './recording-links.js';
+import {fallbackEvent,contextOptions} from './context.js';
 import {config} from '../config.js';
 import {AppError,publicError} from '../errors.js';
 import {publicUrl,youtubeUrl} from '../retrieval.js';
@@ -88,10 +89,11 @@ export async function analyze(input,{signal,onUpdate=()=>{},deadline=Date.now()+
       result.candidates=ranked.map(c=>addAlignment(c,result.extraction.transcript,result.extraction.basis));
       onUpdate({stage:'Source passages located',result:snapshot()});
      })());
-     if(providers.exa.videos&&providers.gemini.eventQuery&&result.candidates.some(c=>c.alignment?.matches.length))work.push((async()=>{
+     if(providers.exa.videos&&providers.gemini.eventQuery&&result.candidates.length)work.push((async()=>{
       // The candidate title is a discovery clue, not a reference answer or verification.
       let query='';
       if(providers.gemini.eventQuery){try{const event=await providers.gemini.eventQuery(result.candidates,result.extraction,ctx);if(event){query=event.query;result.eventClue=event;}}catch{}}
+      if(!query){const event=fallbackEvent(result.candidates,result.extraction);if(event){query=event.query;result.eventClue=event;result.warnings.push('Event-model extraction was unavailable; searched source wording instead.');}}
       if(!query)return;
       const searches=await Promise.allSettled([providers.exa.videos(query,ctx),...(providers.exa.eventSources?[providers.exa.eventSources(query+' full transcript video',ctx)]:[])]);
       const found=searches.flatMap(s=>s.status==='fulfilled'?s.value:[]);
@@ -109,11 +111,12 @@ export async function analyze(input,{signal,onUpdate=()=>{},deadline=Date.now()+
    }catch(error){result.warnings.push(publicError(error).message);}
   } else result.warnings.push('Not enough time remained to retrieve additional context or search for full-video candidates.');
   // Preserve the archive's own link relation without pretending its text was checked in the video.
-  const archive=result.videoCandidates.find(c=>c.recordingPage&&c.timedPassages?.length&&new URL(c.url).hostname==='trump-archive.com');
-  if(archive&&!result.candidates.some(c=>c.url===archive.url))result.candidates.push(archive);
+  let archive=result.videoCandidates.find(c=>c.recordingPage&&c.timedPassages?.length&&new URL(c.url).hostname==='trump-archive.com');
+  if(!archive&&!result.extraction.transcript){const page=results.find(c=>{try{return new URL(c.url).hostname==='trump-archive.com'&&new URL(c.url).pathname.startsWith('/item/');}catch{return false;}});if(page)archive=addAlignment({...page,sourceText:page.text,recordingPage:true,timedPassages:[],verification:'unverified',evidenceKind:'event_search_archive'},'',result.extraction.basis);}
+  if(archive){const existing=result.candidates.find(c=>c.url===archive.url);if(existing)existing.recordingPage=true;else result.candidates.push(archive);}
   if(archive&&remaining()>3500){try{await stage('Following transcript recording link',Math.min(2000,remaining()-2500),async ctx=>{
    const links=await archiveRecordingLinks(archive.url,ctx.signal);
-   const linked=links.map(url=>({url,title:archive.title,linkedFrom:archive.url,recordingPage:false,evidenceKind:'archive_link',verification:'unverified',fullLengthVerified:false,timedPassages:archive.timedPassages,alignment:{matchedWords:0,clipWords:archive.alignment.clipWords,matches:[],longestRun:0},support:'The matching transcript archive explicitly links this recording. Timestamp cues come from that transcript; audiovisual identity has not been checked.'}));
+   const linked=links.map(url=>({url,title:archive.title,linkedFrom:archive.url,recordingPage:false,evidenceKind:'archive_link',verification:'unverified',fullLengthVerified:false,timedPassages:archive.timedPassages,alignment:{matchedWords:0,clipWords:archive.alignment.clipWords,matches:[],longestRun:0},support:archive.alignment.matches.length?'The matching transcript archive explicitly links this recording. Timestamp cues come from that transcript; audiovisual identity has not been checked.':'An event-search archive links this recording. The submitted clip could not be transcribed, so recording identity remains unconfirmed.'}));
    result.videoCandidates=[...linked,...result.videoCandidates.filter(c=>!links.includes(c.url))].slice(0,6);
   });}catch{result.warnings.push('The transcript was found, but its recording link could not be retrieved within the budget.');}}
   if(result.extraction.visualClues&&providers.gemini.inspectVideo&&remaining()>3000){
@@ -129,6 +132,7 @@ export async function analyze(input,{signal,onUpdate=()=>{},deadline=Date.now()+
    });}catch(error){result.warnings.push(publicError(error).message);}
   }
   if(!result.candidates.length){result.summary=result.videoCandidates.length?'Possible video links were found, but no supporting source-text passage was established.':'No supporting source candidate was found. Try a distinctive spoken quote.';return snapshot();}
+  result.contextEvidence=contextOptions(result.candidates,result.extraction.transcript);
   if(remaining()>700) {
    try {
     const report=await stage('Writing evidence-based report',Math.min(4500,remaining()-150),ctx=>providers.gemini.summarize(result.extraction,result.candidates,ctx));
@@ -140,5 +144,6 @@ export async function analyze(input,{signal,onUpdate=()=>{},deadline=Date.now()+
   if(!result.candidates.length) {result.status=['SOCIAL_UNSUPPORTED','SOCIAL_UNAVAILABLE','SOCIAL_TIMEOUT','SOCIAL_SETUP','UNSAFE_URL','UNAVAILABLE_URL','RETRIEVAL_UNAVAILABLE','MEDIA_PROCESSING','NO_AUDIO','NO_CLUES','EXA_KEY_MISSING','GEMINI_KEY_MISSING'].includes(detail.code)?'input_error':'inconclusive';result.summary=detail.message;}
  }
  if(result.status==='candidate'&&result.extraction?.transcript&&!result.candidates.some(c=>c.alignment?.matches.length)&&!result.videoCandidates.some(c=>c.videoCheck?.status==='supported_sample')){result.status='inconclusive';result.summary='No matching source passage was found for the available transcript or quote. Related search leads below remain unconfirmed.';}
+ if(!result.context?.length&&result.contextEvidence?.length)result.context=result.contextEvidence.slice(0,3).map(e=>({...e,explanation:e.position==='background'?'Related article background. The clip transcript was unavailable, so whether this appears in the clip is unknown.':`This source passage appears ${e.position} matched wording and adds words not present in the provisional clip transcript. Its effect on meaning has not been established.`,basis:'verbatim_source'}));
  return snapshot();
 }
