@@ -1,3 +1,24 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Quantro</title><link rel="stylesheet" href="/style.css"><script type="module" src="/app.js"></script></head>
-<body><main><p>QUANTRO · HACKNC</p><h1>Find the source.<br>See the context.</h1><p>A fresh foundation for evidence-backed video source discovery.</p><p id="status" role="status">Checking backend…</p><p class="note">Setup preview. Video analysis is not implemented yet.</p></main></body></html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Quantro · Find the context</title><link rel="stylesheet" href="/style.css"><script type="module" src="/app.js"></script></head>
+<body><main>
+<header><a href="/" class="brand">QUANTRO<span> / HACKNC</span></a><span class="pill">Experimental demo</span></header>
+<section class="intro"><p class="eyebrow">A short clip rarely tells the whole story.</p><h1>Find the source.<br><span>See the context.</span></h1><p>Search for longer sources and inspect the evidence behind each suggestion.</p></section>
+<div id="health" class="notice" role="status">Checking provider setup…</div>
+<form id="form" class="card">
+<label for="url">Video or page link</label><input id="url" type="url" placeholder="https://…" autocomplete="off">
+<p class="hint">Public YouTube segments can be inspected directly. Other links use publicly indexed page text; some platforms block access.</p>
+<div class="row"><div><label for="start">YouTube start time (seconds)</label><input id="start" type="number" min="0" max="86400" value="0"></div><div><label for="file">Or upload a short clip</label><input id="file" type="file" accept=".mp4,.webm,.mp3,.wav,.m4a"><p class="hint">Up to 8 MB. First 30 seconds of audio.</p></div></div>
+<label for="quote">Spoken quote <span class="optional">— optional, useful when a link is blocked</span></label><textarea id="quote" rows="3" maxlength="4000" placeholder="Paste the actual words spoken in the clip…"></textarea>
+<p class="hint">A supplied quote takes priority over automatic transcription. Public link/text/audio is sent to Gemini and/or Exa for processing. Do not submit private content.</p>
+<div class="actions"><button id="submit" type="submit">Find context <span aria-hidden="true">↗</span></button><button id="cancel" type="button" class="secondary" hidden>Cancel</button></div>
+</form>
+<section id="progress" class="card" hidden aria-live="polite"><div class="row"><strong id="stage">Starting…</strong><span id="elapsed">0s</span></div><progress id="bar" max="17" value="0"></progress><p class="hint">17-second server budget. Upload and network time are additional; end-to-end speed is not guaranteed.</p></section>
+<p id="error" role="alert"></p>
+<section id="report" hidden>
+<div class="report-heading"><h2>Your report</h2><button id="download" class="secondary" type="button">Download JSON</button></div>
+<div class="card"><span id="outcome" class="pill"></span><h3>What we found</h3><p id="summary"></p><p class="hint">AI interpretation of retrieved evidence. Recording identity, surrounding context and earliest-original status have not been independently verified.</p></div>
+<div id="extraction"></div><div id="context"></div><h3>Possible sources</h3><div id="candidates"></div><div id="warnings" class="notice"></div>
+<details class="card"><summary>Timing, calls & estimated cost</summary><pre id="metrics"></pre></details>
+</section>
+<footer>No confidence percentages. No “verified” badge without verification. A matching upload is not necessarily the earliest original.</footer>
+</main></body></html>

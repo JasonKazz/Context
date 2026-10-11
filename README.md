@@ -1,31 +1,46 @@
 # Quantro
 
-Clean HackNC beginner-track rebuild for finding longer sources of short video clips and explaining surrounding context with evidence.
+HackNC beginner-track project: public-web source discovery for short clips, with cited excerpts and a clearly uncertain context report.
 
-## Current status
+## Run locally
 
-Runnable frontend/backend skeleton only. No provider calls, video retrieval, job processing, or verification is implemented. The 20-second user-response goal is unmeasured.
+Node 22.13+ (tested on Node 26). `ffmpeg` is needed only for uploaded media. No npm dependencies.
 
-## Run
+1. Copy `.env.example` to `.env` **only if it does not already exist**.
+2. Set `GEMINI_API_KEY` and `EXA_API_KEY` in the ignored `.env`.
+3. Run `npm start` and open http://127.0.0.1:3100.
 
-Use Node.js 22 or newer. No dependencies are needed for this skeleton.
+`npm test` runs deterministic tests. `npm run benchmark -- path/to/cases.json` runs uncached provider trials. Provider calls incur usage charges or consume free credits. No automatic retries or extra paid providers.
 
-```sh
-cp .env.example .env # only if .env does not already exist
-npm start
-```
+## Supported discovery routes
 
-Open http://127.0.0.1:3100. `npm run check` checks JavaScript syntax. Keep provider credentials in the ignored root `.env` only. `.gitignore` is a file, not a folder.
+- Public YouTube URL: ask Gemini for discovery clues from a 30-second segment, then search Exa.
+- Other public URL: retrieve accessible indexed page text with Exa; extract clues, then search. **This does not mean the video itself was watched.** Blocked/private/unindexed links may fail.
+- Upload MP4/WebM/MP3/M4A/WAV up to 8 MB: extract first 30 seconds of audio locally, then Gemini and Exa.
+- Optional spoken quote (also works alone): search using user-supplied words; no claim of independent transcription.
 
-## Layout
+## Honest scope
 
-- `frontend/`: lightweight web interface; no credentials.
-- `backend/src/`: server and single configuration loader.
-- `backend/src/pipeline/`: retrieval, extraction, discovery, ranking, verification, reporting boundaries.
-- `backend/src/providers/`: server-only provider adapters.
-- `shared/`: proposed JSON request/result contracts; not yet enforced at runtime.
-- `benchmark/`: future real-provider experiment, separate from unit fixtures.
-- `tests/fixtures/`: deterministic synthetic fixtures.
-- `docs/architecture.md`: next implementation steps and evidence rules.
+All suggestions are **unverified candidates**. Excerpts come from public indexed content. AI report quotes are checked against retrieved excerpts; interpretations can still be wrong. No original-recording verification, earliest-upload determination or comprehensive fact-checking. The service uses a 17-second deadline; upload/network/render time is additional. Real accuracy and end-to-end latency require benchmarks.
 
-Work on main. The old HackNCQuantro repository is read-only reference. Do not change existing deployments.
+## Architecture
+
+- `frontend/`: buildless HTML/CSS/JS, polling and cancellation; no credentials.
+- `backend/src/server.js`: same-origin local HTTP API and static frontend.
+- `backend/src/jobs.js`: SQLite job state, idempotency, restart recovery, expiry, two active jobs maximum.
+- `backend/src/config.js`: one environment loader.
+- `backend/src/providers/`: Gemini and Exa adapters with bounded requests.
+- `backend/src/pipeline/`: deadline-aware extraction, discovery, ranking and reporting.
+- `shared/contracts.js`: runtime request validation and shared constants.
+- `benchmark/`: live-provider timing; references kept separate from discovery.
+- `tests/`: synthetic unit/integration tests.
+
+## API
+
+POST `/api/jobs` with JSON `{url, quote?, startSeconds?}` and `Idempotency-Key`; returns 202 + job ID. GET `/api/jobs/:id` polls partial/final results. DELETE `/api/jobs/:id` cancels. GET `/api/submissions/:key` recovers a submission after refresh. Inputs may alternatively contain `{media:{data:<base64>,mimeType}}`.
+
+SQLite lives in ignored `work/` and stores reports for up to 24 hours (purged on new submissions), maximum 200 jobs. Pending jobs are marked interrupted after a restart and never automatically reprocessed. Media is temporary and cleaned after audio extraction. Cancellation stops local requests/processes where possible; external providers may continue processing accepted requests or bill them.
+
+Localhost demo only: no authentication or public deployment is configured. The server restricts Host and Origin, rejects local/private input destinations and credential-bearing URLs, delegates URL retrieval to providers (no arbitrary server-side media fetch), and renders all text safely. Provider retrieval redirects are controlled by those providers, not this application. Logs contain stage timing/error codes, never raw URLs or provider responses.
+
+Work on main. Old HackNCQuantro and existing deployments remain untouched.
