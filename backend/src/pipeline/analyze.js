@@ -1,5 +1,6 @@
+import {hasRecordingEvidence} from '../../../shared/contracts.js';
 import {archiveRecordingLinks} from './recording-links.js';
-import {fallbackEvent,contextOptions} from './context.js';
+import {fallbackEvent,contextOptions,titleEvent} from './context.js';
 import {config} from '../config.js';
 import {AppError,publicError} from '../errors.js';
 import {publicUrl,youtubeUrl} from '../retrieval.js';
@@ -93,8 +94,8 @@ export async function analyze(input,{signal,onUpdate=()=>{},deadline=Date.now()+
      })());
      if(providers.exa.videos&&providers.gemini.eventQuery&&result.candidates.length)work.push((async()=>{
       // The candidate title is a discovery clue, not a reference answer or verification.
-      let query='';
-      if(providers.gemini.eventQuery){try{const event=await providers.gemini.eventQuery(result.candidates,result.extraction,ctx);if(event){query=event.query;result.eventClue=event;}}catch{}}
+      const titleClue=titleEvent(result.candidates,result.extraction);let query=titleClue?.query||'';if(titleClue)result.eventClue=titleClue;
+      if(!query&&providers.gemini.eventQuery){try{const event=await providers.gemini.eventQuery(result.candidates,result.extraction,ctx);if(event){query=event.query;result.eventClue=event;}}catch{}}
       if(!query){const event=fallbackEvent(result.candidates,result.extraction);if(event){query=event.query;result.eventClue=event;result.warnings.push('Event-model extraction was unavailable; searched source wording instead.');}}
       if(!query)return;
       const searches=await Promise.allSettled([providers.exa.videos(query,ctx),...(providers.exa.eventSources?[providers.exa.eventSources(query+' full transcript video',ctx)]:[])]);
@@ -127,7 +128,7 @@ export async function analyze(input,{signal,onUpdate=()=>{},deadline=Date.now()+
   });}catch{result.warnings.push('The transcript was found, but its recording link could not be retrieved within the budget.');}}
   if(result.extraction.visualClues&&providers.gemini.inspectVideo&&remaining()>3000){
    try{await stage('Checking candidate video appearance and speech',Math.min(5500,remaining()-1800),async ctx=>{
-    const videos=result.videoCandidates.filter(c=>youtubeUrl(c.url)&&c.eventRelevance>=0&&(c.alignment.matchedWords>=6||c.timedPassages?.length)).slice(0,2);
+    const videos=result.videoCandidates.filter(c=>youtubeUrl(c.url)&&hasRecordingEvidence(c)).slice(0,2);
     await Promise.allSettled(videos.map(async candidate=>{
      try{
       const check=await providers.gemini.inspectVideo(candidate.url,result.extraction,ctx,parts,candidate.timedPassages?.[0]?.startSeconds||0);

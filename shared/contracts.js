@@ -23,3 +23,14 @@ export function validateInput(value) {
  }
  return {url,quote,startSeconds,media};
 }
+
+// A display/search eligibility gate, never a claim of recording verification.
+export function hasRecordingEvidence(candidate){
+ if(candidate.eventRelevance<0||candidate.videoCheck?.status==='different_sample')return false;
+ if(['supported_sample','speech_sample_match'].includes(candidate.videoCheck?.status))return true;
+ const a=candidate.alignment||{};
+ const sufficient=(words,run)=>words>=Math.min(30,Math.max(12,(a.clipWords||0)*.35))&&run>=12;
+ if(sufficient(a.matchedWords||0,a.longestRun||0))return true;
+ if(candidate.linkedFrom&&sufficient(candidate.parentMatchedWords||0,candidate.parentLongestRun||0))return true;
+ return candidate.evidenceKind==='archive_link'&&candidate.timedPassages?.some(p=>p.matchedWords>=12);
+}

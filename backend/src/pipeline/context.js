@@ -18,6 +18,11 @@ export function contextOptions(candidates,transcript=''){
  return out.sort((a,b)=>Number(b.recordingTranscript)-Number(a.recordingTranscript)||a.distance-b.distance).slice(0,12).map(({distance,...item})=>item);
 }
 function compactQuery(value){const seen=new Set();return (value.match(/[\p{L}\p{N}]+/gu)||[]).filter(word=>{const key=word.toLowerCase();if(seen.has(key))return false;seen.add(key);return true;}).slice(0,40).join(' ');}
+export function titleEvent(candidates,extraction){
+ const source=candidates.find(c=>c.alignment?.longestRun>=12&&/\b(?:speech|address|commencement|interview|convention)\b/i.test(c.title)&&/\b(?:19|20)\d{2}\b/.test(c.title));
+ if(!source)return null;
+ return {query:source.title.replace(/\s*[|].*$/,'').replace(/^(?:full text|transcript)\s*:\s*/i,'')+' full speech video',supportingQuote:source.title,method:'matched_source_title'};
+}
 export function fallbackEvent(candidates,extraction){
  for(const c of candidates){if(extraction.transcript&&!c.alignment?.matches.length)continue;
   const passages=[c.title,c.excerpt,c.alignment?.continuous?.text,...(c.alignment?.passages||[]).map(p=>p.text)].filter(Boolean);

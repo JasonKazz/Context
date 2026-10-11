@@ -50,5 +50,5 @@ export async function eventQuery(candidates,extraction,ctx){
  const raw=await generate([{text:JSON.stringify({sources,clip:extraction.description})}], 'Find event details stated in these source passages, to search for a complete recording. Return JSON {"query":"speaker event venue date full video, max 240 characters. Include the event date and venue when explicitly stated","quote":"exact supporting substring from one supplied passage"}. Prefer the actual event (meeting, bill signing, interview) over the news topic. Include its distinctive event name (for example the programme or policy being promoted) if stated; not just generic press event. Do not assume publication date is event date. If no event details occur return empty strings. Never use memory or infer details.',ctx,400);
  if(typeof raw.query!=='string'||typeof raw.quote!=='string'||raw.quote.length<20||!sources.some(s=>s.passages.some(p=>p.includes(raw.quote))))return null;
  const years=[...new Set(raw.quote.match(/\b20\d{2}\b/g)||[])];
- return {query:`${raw.query.slice(0,240)} ${years.join(' ')} ${raw.quote.slice(0,240)}`.slice(0,550),supportingQuote:raw.quote.slice(0,800)};
+ return {query:`${raw.query.slice(0,240)} ${years.join(' ')}`.slice(0,550),supportingQuote:raw.quote.slice(0,800)};
 }
