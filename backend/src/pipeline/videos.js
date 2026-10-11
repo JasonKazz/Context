@@ -14,7 +14,7 @@ export function videoCandidates(results,extraction,inputUrl='',eventQuery='') {
 }
 
 export function videoQuery(candidates,extraction){
- return `${extraction.queries[0]||''} ${extraction.description||''} ${extraction.visualClues||''}`.slice(0,500);
+ return `${extraction.queries[0]||''} ${extraction.basis==='user_quote'?'':extraction.description||''} full speech interview recording`.slice(0,500);
 }
 
 export function checkedVideo(check,extraction){

@@ -64,3 +64,15 @@ test('related pages without transcript alignment remain inconclusive',async()=>{
  const result=await analyze({url:'',quote:'the distinctive solar energy proposal includes free panels for every local library'},{providers:{exa:{search:async()=>[{url:'https://example.com/related',title:'Solar energy proposal',text:'A solar energy proposal considers panels and another library. This is unrelated wording.'}]},gemini:{summarize:async()=>({summary:'Related pages',context:[]})}}});
  assert.equal(result.status,'inconclusive');assert.ok(result.candidates.every(c=>!c.alignment.matches.length));
 });
+
+
+test('video discovery starts before page discovery finishes and survives its failure',async()=>{
+ let release;const gate=new Promise(resolve=>{release=resolve;});let videoStarted=false;
+ const result=await analyze({url:'',quote:'our public library will offer free classes every weekend'},{providers:{exa:{
+  search:async()=>{await gate;throw new Error('page unavailable');},
+  videos:async()=>{videoStarted=true;release();return [{url:'https://youtube.com/watch?v=abcdefghijk',title:'Council recording',text:'our public library will offer free classes every weekend'}];}
+ },gemini:{summarize:async()=>({summary:'Possible recording',context:[]})}}});
+ assert.equal(videoStarted,true);assert.equal(result.videoCandidates.length,1);
+ assert.equal(result.videoCandidates[0].verification,'unverified');
+ assert.ok(result.candidates.length);
+});

@@ -60,7 +60,14 @@ export async function analyze(input,{signal,onUpdate=()=>{},deadline=Date.now()+
   const queries=discoveryQueries(result.extraction);
   result.extraction.queries=queries;
   const results=await stage('Searching public indexes',4000,async ctx=>{
-   const settled=await Promise.allSettled(queries.slice(0,2).map(q=>providers.exa.search(q,ctx)));
+   // Start recording discovery alongside page discovery, not after it.
+   const work=queries.slice(0,2).map(q=>providers.exa.search(q,ctx));
+   if(providers.exa.videos)work.push(providers.exa.videos(videoQuery([],result.extraction),ctx).then(found=>{
+    result.videoCandidates=videoCandidates(found,result.extraction,url);
+    onUpdate({stage:'Video candidates available',result:snapshot()});
+    return found;
+   }));
+   const settled=await Promise.allSettled(work);
    for(const item of settled) if(item.status==='rejected') result.warnings.push(publicError(item.reason).message);
    return settled.flatMap(x=>x.status==='fulfilled'?x.value:[]);
   });
@@ -79,12 +86,13 @@ export async function analyze(input,{signal,onUpdate=()=>{},deadline=Date.now()+
       result.candidates=ranked.map(c=>addAlignment(c,result.extraction.transcript,result.extraction.basis));
       onUpdate({stage:'Source passages located',result:snapshot()});
      })());
-     if(providers.exa.videos)work.push((async()=>{
+     if(providers.exa.videos&&providers.gemini.eventQuery&&result.candidates.some(c=>c.alignment?.matches.length))work.push((async()=>{
       // The candidate title is a discovery clue, not a reference answer or verification.
-      let query=videoQuery(result.candidates,result.extraction);
+      let query='';
       if(providers.gemini.eventQuery){try{const event=await providers.gemini.eventQuery(result.candidates,result.extraction,ctx);if(event){query=`${event.query} ${result.extraction.queries[0]}`;result.eventClue=event;}}catch{}}
+      if(!query)return;
       const found=await providers.exa.videos(query,ctx);
-      result.videoCandidates=videoCandidates(found,result.extraction,url,result.eventClue?.query||'');
+      result.videoCandidates=videoCandidates([...found,...result.videoCandidates.map(c=>({...c,text:c.sourceText}))],result.extraction,url,result.eventClue?.query||'');
       onUpdate({stage:'Video candidates available',result:snapshot()});
      })());
      const settled=await Promise.allSettled(work);

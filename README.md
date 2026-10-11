@@ -1,4 +1,4 @@
-# Quantro
+# Context
 
 HackNC beginner-track project: public-web source discovery for short clips, with cited excerpts and a clearly uncertain context report.
 
@@ -66,3 +66,7 @@ SQLite lives in ignored `work/` and stores reports for up to 24 hours (purged on
 Localhost demo only: no authentication or public deployment is configured. The server restricts Host and Origin, rejects local/private input destinations and credential-bearing URLs, uses provider retrieval for general URLs and allowlisted social extractors for bounded MP4 downloads, and renders all text safely. Provider retrieval redirects are controlled by those providers. Local social retrieval disables proxies and external processes, and checks actual connection IPs/ports to block private-network destinations including redirects. Temporary video files are deleted before analysis proceeds. Logs contain stage timing/error codes, never raw URLs or provider responses.
 
 Work on main. Old HackNCQuantro and existing deployments remain untouched.
+
+Recording-first discovery: a dedicated video-index search now runs concurrently with the initial page searches. A later evidence-supported event query can supplement those leads; failed enrichment preserves initial video results. Candidate checks still cover only the opening 90 seconds and cannot establish full-recording identity. This scheduling change is unit-tested, not a measured source-accuracy improvement.
+
+Live smoke test after this change: a supplied JFK moon-speech quote returned five recording leads in 4.747 seconds (6 Exa calls, 2 Gemini calls). Two leads contained 25 matching indexed words. This familiar quote is not an unseen-video benchmark: no submitted media was inspected, candidate duration/completeness was not established, and no recording was verified.
