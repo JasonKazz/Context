@@ -1,27 +1,13 @@
-# Proposed architecture (not yet implemented)
+# Quantro local demo architecture
 
-One frontend and one Node backend, served from the same origin. Plain JavaScript avoids a build tool during the initial experiment; add a framework only when justified. Provider adapters remain independent of HTTP handlers so the benchmark and future Photon/Spectrum adapter can call the same analysis service.
+Implemented: one buildless frontend, one Node backend, SQLite job state, shared runtime input validation, isolated provider adapters, a 17-second absolute processing deadline, bounded provider calls, explicit cancellation, and partial results. No Python or frontend build tool is required; ffmpeg decodes uploaded clips.
 
-## First milestone
+The link route uses a public YouTube segment through Gemini when supported. Other URLs use Exa-indexed page text. The optional quote route skips extraction. Up to two Exa searches run concurrently, lexical evidence ranks up to three candidates, and Gemini writes a report only within the remaining budget. Report quotations must occur in the supplied excerpts.
 
-Benchmark short unseen clips before building the analysis UI. Extract distinctive speech, run at most two search queries concurrently, rank concrete evidence, locate accessible transcript passages, and verify only a relevant media passage when feasible. Never download/transcribe full candidate recordings by default.
+No passage verification is implemented. All sources are candidates. The service never downloads full candidate recordings. Provider search/index coverage, transcription quality and source accuracy remain empirical questions.
 
-Proposed server budget: retrieval 3 s, speech 5 s, search 3 s, evidence 2 s, optional verification 3 s, reporting 1 s. Absolute deadline 17 s includes queue time; 3 s network/render allowance is a hypothesis. Measure user-perceived time including uploads separately. Fast errors do not count as successful discovery.
+Job state survives browser refresh. Duplicate idempotency keys return the same job; interrupted jobs are not resumed after restart. At most two analyses run at once. Cancellation aborts local requests and media processes, but providers may continue accepted work externally. The database stores local reports in ignored work/; maximum 200 records, purged after 24 hours on subsequent submissions.
 
-## Next API
+Validation completed: seven deterministic tests; local HTTP checks for static assets, health, idempotency, cross-origin rejection, and blocking .env/database access; browser checked private-address rejection. These are not accuracy or latency benchmarks. Real-provider trials are pending saved API credentials.
 
-- POST /api/jobs: validate bounded input; idempotency key; return 202 + job ID immediately.
-- GET /api/jobs/:id: progress, partial evidence, terminal outcome.
-- DELETE /api/jobs/:id: cancel work and child processes where possible.
-
-These routes currently return 501. Persist job identities and terminal results in SQLite when implementing jobs; refresh must reuse job IDs. Expired or interrupted jobs must not restart implicitly. Use one bounded worker pool; no separate queue service.
-
-## Implementation safeguards
-
-Public HTTP(S) only, validate DNS and each redirect, block private/loopback/link-local destinations, cap bytes/duration/redirects and media-process resources, clean temporary files. Propagate cancellation and the absolute deadline to every adapter; use no retries in the initial experiment. Do not log credentials, query contents, submitted/signed URLs, media text, or messages. Log stage names, elapsed milliseconds, call counts, estimated cost, and sanitized error codes.
-
-Treat retrieved content as data, never instructions. Captions and snippets are discovery clues, not recording verification. A verified passage requires actual media comparison with recorded evidence; matching upload is not earliest original. Context may leave meaning unchanged. Return uncertain candidates, verified passages, inconclusive explanations, or actionable errors. No invented confidence percentages.
-
-## Validation
-
-Keep deterministic unit fixtures separate from real-provider benchmarks. Report cold and warm runs separately, top-three source accuracy, incorrect suggestions, false verification, retrieval failures, deadline exits, evidence, call counts, estimated cost and per-stage/total timing. Reference answers never enter discovery. Compare against ChatGPT with search. No real-provider benchmark has run yet.
+Next experiment: four unseen accessible clips and one unavailable input, each with an independently substantiated reference kept outside discovery. Record cold/warm runs separately, top-three source correctness, wrong candidates, unsupported verification claims, provider calls/costs, stage timings, and total browser time including upload. Compare with ChatGPT search. The 17-second server deadline does not establish a universal 20-second end-to-end response.
