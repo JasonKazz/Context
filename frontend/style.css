@@ -9,3 +9,5 @@ body:not(.report-view) #report,body:not(.report-view) #progress{display:none}
 .summary-evidence{border-top:1px solid var(--line);padding:16px 0;margin:0}.summary-evidence>summary{font-weight:400;font-size:16px;line-height:1.65;color:#444;max-width:1000px}.summary-evidence a,.other-sources a{font-size:13px;text-decoration:underline}.report-summary{max-width:1020px}.report-summary #context{margin:20px 0}.report-summary>h2{font-size:36px}.other-sources{padding:20px 0}.source-card>.evidence-label{display:none}#assessment .source-tag{display:none}
 
 .summary-sources{margin:22px 0}.summary-sources>summary{font-size:13px;color:#666}.report-summary #summary{max-width:78ch}
+
+.run-stats{margin:28px 0 44px}.run-stats .evidence-stats{margin-bottom:12px}.run-stats .stat-label{background:#f6f6f7;color:#555}.run-stats .stat-value{font-size:28px}.timing-breakdown{margin:12px 0}.timing-breakdown>summary{font-size:12px;color:#777}.timing-row{display:flex;justify-content:space-between;gap:24px;padding:12px 0;border-bottom:1px solid var(--line);font-size:13px}.timing-row>span:last-child{white-space:nowrap;font-variant-numeric:tabular-nums}#stage-timings{max-width:780px}
