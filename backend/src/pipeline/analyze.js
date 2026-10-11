@@ -1,3 +1,4 @@
+import {archiveRecordingLinks} from './recording-links.js';
 import {config} from '../config.js';
 import {AppError,publicError} from '../errors.js';
 import {publicUrl,youtubeUrl} from '../retrieval.js';
@@ -107,6 +108,14 @@ export async function analyze(input,{signal,onUpdate=()=>{},deadline=Date.now()+
     });
    }catch(error){result.warnings.push(publicError(error).message);}
   } else result.warnings.push('Not enough time remained to retrieve additional context or search for full-video candidates.');
+  // Preserve the archive's own link relation without pretending its text was checked in the video.
+  const archive=result.videoCandidates.find(c=>c.recordingPage&&c.timedPassages?.length&&new URL(c.url).hostname==='trump-archive.com');
+  if(archive&&!result.candidates.some(c=>c.url===archive.url))result.candidates.push(archive);
+  if(archive&&remaining()>3500){try{await stage('Following transcript recording link',Math.min(2000,remaining()-2500),async ctx=>{
+   const links=await archiveRecordingLinks(archive.url,ctx.signal);
+   const linked=links.map(url=>({url,title:archive.title,linkedFrom:archive.url,recordingPage:false,evidenceKind:'archive_link',verification:'unverified',fullLengthVerified:false,timedPassages:archive.timedPassages,alignment:{matchedWords:0,clipWords:archive.alignment.clipWords,matches:[],longestRun:0},support:'The matching transcript archive explicitly links this recording. Timestamp cues come from that transcript; audiovisual identity has not been checked.'}));
+   result.videoCandidates=[...linked,...result.videoCandidates.filter(c=>!links.includes(c.url))].slice(0,6);
+  });}catch{result.warnings.push('The transcript was found, but its recording link could not be retrieved within the budget.');}}
   if(result.extraction.visualClues&&providers.gemini.inspectVideo&&remaining()>3000){
    try{await stage('Checking candidate video appearance and speech',Math.min(5500,remaining()-1800),async ctx=>{
     const videos=result.videoCandidates.filter(c=>youtubeUrl(c.url)&&c.eventRelevance>=0&&(c.alignment.matchedWords>=6||c.timedPassages?.length)).slice(0,2);
