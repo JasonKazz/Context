@@ -1,0 +1,5 @@
+{
+  "name": "quantro", "version": "0.1.0", "private": true, "type": "module",
+  "engines": {"node": ">=22"},
+  "scripts": {"start": "node --env-file-if-exists=.env backend/src/server.js", "dev": "node --watch --env-file-if-exists=.env backend/src/server.js", "check": "node --check backend/src/server.js && node --check backend/src/config.js && node --check frontend/app.js"}
+}

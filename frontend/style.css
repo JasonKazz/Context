@@ -1,0 +1,4 @@
+:root { color-scheme: light; font-family: system-ui, sans-serif; color: #142d38; background: #f4f8f7; }
+body { margin: 0; } main { max-width: 700px; margin: 12vh auto; padding: 32px; }
+h1 { font-size: clamp(40px, 7vw, 70px); line-height: 1.08; letter-spacing: -.04em; }
+p { line-height: 1.6; } #status { padding: 16px; border: 1px solid #9abcb5; border-radius: 12px; } .note { color: #57676c; }

@@ -1,0 +1,1 @@
+Reference answers belong here, separate from pipeline inputs. Record source URL, passage location, substantiating evidence and whether earliest-original status is unknown. Local answer files are ignored.

@@ -1,0 +1,24 @@
+# Secrets: examples are the only environment files committed
+.env
+.env.*
+!.env.example
+**/.env
+**/.env.*
+!**/.env.example
+*.pem
+*.key
+# Dependencies and generated files
+node_modules/
+dist/
+coverage/
+*.log
+.DS_Store
+# User media, job state and local benchmark material
+work/
+tmp/
+uploads/
+*.sqlite*
+benchmark/results/
+benchmark/inputs/
+benchmark/references/*
+!benchmark/references/README.md
