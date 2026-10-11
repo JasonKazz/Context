@@ -5,6 +5,7 @@ import * as exa from '../providers/exa.js';
 import * as gemini from '../providers/gemini.js';
 import {audioPart} from '../media.js';
 import {rank} from './ranking.js';
+import {discoveryQueries} from './queries.js';
 export async function analyze(input,{signal,onUpdate=()=>{},deadline=Date.now()+config.deadlineMs,providers={exa,gemini}}={}) {
  const started=Date.now();const metrics={calls:{exa:0,gemini:0},inputTokens:0,outputTokens:0,estimatedCostUsd:0,exaReportedCostUsd:0,costNotes:new Set(),stages:[]};
  const result={status:'inconclusive',summary:'No source candidate has been established.',context:[],candidates:[],warnings:[],extraction:null,verification:'Not performed. Indexed text and model interpretations do not prove recording identity.',originality:'Earliest original unknown.'};
@@ -44,13 +45,12 @@ export async function analyze(input,{signal,onUpdate=()=>{},deadline=Date.now()+
     if(signal?.aborted) throw error;
     result.warnings.push(publicError(error).message);
     if(!metadata && yt && remaining()>5500) metadata=await stage('Trying indexed text fallback',2000,ctx=>providers.exa.contents(yt,ctx));
-    if(!metadata?.title) throw error;
+    if(!metadata?.title || !metadata.title.replace(/youtube|tiktok|instagram|facebook|[\s\-–|]/gi,'').trim()) throw new AppError('RETRIEVAL_UNAVAILABLE','The video could not be accessed and the public index has no usable title. Try a public link, upload the clip, or paste its spoken quote.',422);
     result.extraction={transcript:'',queries:[metadata.title.slice(0,180)],description:metadata.title,basis:'title_only'};
     result.warnings.push('Fallback uses the page title only. Candidate relevance may be weak; the video was not transcribed.');
    }
   }
-  const queries=[...result.extraction.queries];
-  if(queries.length>1&&result.extraction.description&&!['user_quote','title_only'].includes(result.extraction.basis))queries[1]=`${queries[1]} ${result.extraction.description}`.slice(0,350);
+  const queries=discoveryQueries(result.extraction);
   result.extraction.queries=queries;
   const results=await stage('Searching public indexes',4000,async ctx=>{
    const settled=await Promise.allSettled(queries.slice(0,2).map(q=>providers.exa.search(q,ctx)));

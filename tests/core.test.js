@@ -53,3 +53,9 @@ test('weak generic overlaps are not source candidates',()=>{
  const result=rank([{url:'https://example.com/unrelated',title:'Unrelated',text:'The president gave a speech. This is another thing that happened.'}],['president gave an honorary visiting professor speech']);
  assert.equal(result.length,0);
 });
+
+test('spoken query skips a generic salutation without inventing words',async()=>{
+ const {discoveryQueries}=await import('../backend/src/pipeline/queries.js');
+ const input={basis:'youtube_segment',transcript:'Mayor, guests, ladies and gentlemen, our new telescope will measure the distant atmosphere next spring.',queries:['Mayor guests','telescope'],description:'A science presentation.'};
+ const queries=discoveryQueries(input);assert.ok(queries[0].includes('our new telescope'));assert.ok(!queries[0].includes('Mayor'));assert.equal(queries.length,2);
+});
