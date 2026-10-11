@@ -41,7 +41,11 @@ All suggestions are **unverified candidates**. Excerpts come from public indexed
 
 The report highlights exact runs of at least six words in the provisional clip transcript and retrieved source text. Evidence labels explain matching word counts, not confidence percentages. Adjacent clip passages separated in a source can expose possible omissions or reordered text; these are not confirmed video edits. The AI context assessment accepts only quotations found verbatim in supplied evidence, and may return insufficient evidence. It cannot determine malicious intent.
 
-A bounded search uses spoken wording and cited event clues to find possible longer recordings. At most two YouTube candidates receive a model comparison: 12 seconds of submitted visual reference versus the candidate’s first 90 seconds, sampled at 0.5 fps. A supported sample requires both consistent appearance and a spoken-word match of at least 12 consecutive words. Different opening scenes do not rule out a match later. Full length, exact recording identity and original status remain unchecked. Unconfirmed leads are collapsed. No full candidate videos are downloaded or transcribed.
+Recording discovery runs alongside page searches, then uses evidence-supported event details (including stated dates) for a second video and open-web transcript search. Public indexed links may expose recording pages. All results are deduplicated into one candidate pool; conflicting title years are demoted. No event or source URL is hardcoded.
+
+Explicit HH:MM:SS start/end transcript cues locate matching passages, including those late in a long speech. These are indexed timing clues, not verified recording timestamps. Publication times are excluded. At most two eligible YouTube candidates receive a 90-second candidate-only transcription at their own indexed passage time (opening sample if none). The reference transcript is withheld during this extraction. A subsequent exact-word alignment may support the speech sample; visual identity, completeness and earliest-original status remain unverified. Vimeo/C-SPAN/archive pages can be returned as leads without claiming an audiovisual check.
+
+Reports describe mixed speakers/settings and request 4–6 substantive sentences plus evidence-anchored context findings, while preserving exact-quotation validation and the prohibition on inferring intent.
 
 The comparison shows one continuous, bounded source excerpt rather than duplicate overlapping windows. It may be an article or broadcast quoting the clip, not the complete original speech. Uploaded videos use Gemini inline input; coverage ending is model-reported, not independently measured. Clips longer than three minutes receive partial analysis.
 
@@ -67,6 +71,6 @@ Localhost demo only: no authentication or public deployment is configured. The s
 
 Work on main. Old HackNCQuantro and existing deployments remain untouched.
 
-Recording-first discovery: a dedicated video-index search now runs concurrently with the initial page searches. A later evidence-supported event query can supplement those leads; failed enrichment preserves initial video results. Candidate checks still cover only the opening 90 seconds and cannot establish full-recording identity. This scheduling change is unit-tested, not a measured source-accuracy improvement.
+Recording-first discovery: a dedicated video-index search now runs concurrently with the initial page searches. A later evidence-supported event query can supplement those leads; failed enrichment preserves initial video results. Candidate checks cannot establish full-recording identity. This scheduling change is unit-tested, not a measured source-accuracy improvement.
 
 Live smoke test after this change: a supplied JFK moon-speech quote returned five recording leads in 4.747 seconds (6 Exa calls, 2 Gemini calls). Two leads contained 25 matching indexed words. This familiar quote is not an unseen-video benchmark: no submitted media was inspected, candidate duration/completeness was not established, and no recording was verified.

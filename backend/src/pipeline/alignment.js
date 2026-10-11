@@ -49,4 +49,4 @@ export function addAlignment(candidate,transcript,basis) {
  const alignment=alignText(transcript||'',sourceText||candidate.excerpt||'');
  return {...publicCandidate,alignment,evidence:evidenceLabel(alignment,basis)};
 }
-export function sourcePassages(candidate){return [candidate.excerpt,...(candidate.alignment?.passages||[]).map(p=>p.text),...(candidate.alignment?.gaps||[]).map(g=>g.text)].filter(Boolean);}
+export function sourcePassages(candidate){return [candidate.alignment?.continuous?.text,candidate.excerpt,...(candidate.alignment?.passages||[]).map(p=>p.text),...(candidate.alignment?.gaps||[]).map(g=>g.text)].filter(Boolean);}

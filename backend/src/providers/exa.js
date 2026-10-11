@@ -28,3 +28,9 @@ export async function videos(query,ctx) {
  if(searches.every(s=>s.status==='rejected'))throw searches[0].reason;
  return searches.flatMap(s=>s.status==='fulfilled'?s.value.results||[]:[]);
 }
+
+// Event-specific open-web retrieval can discover transcript archives outside video hosts.
+export async function eventSources(query,ctx){
+ const result=await call('search',{query:query.slice(0,600),type:'auto',numResults:5,contents:{text:{maxCharacters:90000},extras:{links:20}}},ctx);
+ return result.results||[];
+}

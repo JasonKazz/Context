@@ -49,7 +49,7 @@ test('candidate appearance alone cannot pass the video sample check',async()=>{
  const {checkedVideo}=await import('../backend/src/pipeline/videos.js');const extraction={transcript:full,basis:'youtube_segment'};
  assert.equal(checkedVideo({visual:'consistent',transcript:''},extraction).status,'inconclusive');
  assert.equal(checkedVideo({visual:'different',transcript:full},extraction).status,'different_sample');
- assert.equal(checkedVideo({visual:'unknown',transcript:full},extraction).status,'inconclusive');
+ assert.equal(checkedVideo({visual:'unknown',transcript:full},extraction).status,'speech_sample_match');
  assert.equal(checkedVideo({visual:'consistent',transcript:full},extraction).status,'supported_sample');
  assert.equal(checkedVideo({visual:'consistent',transcript:full},extraction).verified,undefined);
 });
@@ -57,4 +57,27 @@ test('candidate appearance alone cannot pass the video sample check',async()=>{
 test('event detail ranks a matching venue ahead of generic titles and excludes non-video pages',()=>{
  const r=videoCandidates([{url:'https://youtube.com/watch?v=aaaaaaaaaaa',title:'Trump Accounts remarks'},{url:'https://youtube.com/watch?v=bbbbbbbbbbb',title:'Trump rings bell in Oval Office for Accounts'},{url:'https://c-span.org/classroom/document/123',title:'Oval Office'}],{transcript:'',basis:'youtube_segment'},'', 'Trump Accounts Oval Office full video');
  assert.equal(r.length,2);assert.ok(r[0].url.includes('bbbbbbbbbbb'));assert.equal(r[0].fullLengthVerified,false);
+});
+
+
+test('timestamps locate a late passage and preserve start/end cue pairs',async()=>{
+ const {timedPassages}=await import('../backend/src/pipeline/passages.js');
+ const text='Speaker 00:00:00-00:00:30 Introductory words only. Speaker 00:57:29-00:58:06 Our public library will offer free classes every weekend. Speaker 00:58:06-00:58:49 Closing words.';
+ const hits=timedPassages(text,first);assert.equal(hits.length,1);assert.equal(hits[0].startSeconds,3449);assert.equal(hits[0].endSeconds,3486);assert.ok(hits[0].text.includes(first));
+ assert.equal(timedPassages('Our public library will offer free classes every weekend.',first).length,0);
+});
+test('matching timestamped archives are admitted but ordinary unrelated pages are not',()=>{
+ const r=videoCandidates([{url:'https://archive.example/event',title:'Full speech',text:`00:57:29-00:58:06 ${first}`},{url:'https://news.example/article',title:'News',text:first}],{transcript:first,basis:'youtube_segment'});
+ assert.equal(r.length,1);assert.equal(r[0].recordingPage,true);assert.equal(r[0].fullLengthVerified,false);
+});
+test('a conflicting year loses event rank to the matching event',()=>{
+ const r=videoCandidates([{url:'https://youtube.com/watch?v=aaaaaaaaaaa',title:'Speaker Syracuse 2024 full speech'},{url:'https://youtube.com/watch?v=bbbbbbbbbbb',title:'Speaker Syracuse 2026 full speech'}],{transcript:'',basis:'youtube_segment'},'','Speaker Syracuse 2026');
+ assert.ok(r[0].url.includes('bbbbbbbbbbb'));assert.ok(r[1].eventRelevance<0);
+});
+
+
+test('publication times in articles cannot become video timestamps',async()=>{
+ const {timedPassages}=await import('../backend/src/pipeline/passages.js');
+ assert.equal(timedPassages(`Published 11:17 October 10. ${first} Updated 04:48 ${first}`,first).length,0);
+ assert.equal(timedPassages(`Updated 01:48:38 ${first}`,first).length,0);
 });

@@ -8,7 +8,7 @@ export function rank(results,queries,inputUrl='') {
   const url=safeEvidenceUrl(item.url);if(!url)continue;
   const canonical=u=>{try{return youtubeUrl(u)||new URL(u).origin+new URL(u).pathname.replace(/\/$/,'');}catch{return u;}};
   const key=canonical(url);if(seen.has(key)||(inputUrl&&key===canonical(inputUrl)))continue;seen.add(key);
-  const text=String(item.text||'').slice(0,15000);
+  const text=String(item.text||'').slice(0,90000);
   const highlights=Array.isArray(item.highlights)?item.highlights.filter(x=>typeof x==='string').join('\n'):'';
   const evidence=text||highlights;if(evidence.trim().length<30)continue;
   const found=[...terms].filter(t=>words(evidence).includes(t));

@@ -1,7 +1,7 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Quantro · Find the context</title><link rel="stylesheet" href="/style.css"><script type="module" src="/app.js"></script></head>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Context · Find the context</title><link rel="stylesheet" href="/style.css"><script type="module" src="/app.js"></script></head>
 <body><main>
-<header><a href="/" class="brand">QUANTRO<span> / HACKNC</span></a><span class="pill">Experimental demo</span></header>
+<header><a href="/" class="brand">CONTEXT<span> / HACKNC</span></a><span class="pill">Experimental demo</span></header>
 <section class="intro"><p class="eyebrow">A short clip rarely tells the whole story.</p><h1>Find the source.<br><span>See the context.</span></h1><p>Search for longer sources and inspect the evidence behind each suggestion.</p></section>
 <div id="health" class="notice" role="status">Checking provider setup…</div>
 <form id="form" class="card">
@@ -17,7 +17,7 @@
 <section id="report" hidden>
 <div class="report-heading"><h2>Your report</h2><button id="download" class="secondary" type="button">Download JSON</button></div>
 <div class="card"><span id="outcome" class="pill"></span><h3>What we found</h3><p id="summary"></p><p class="hint">Text highlights are computed from the retrieved words. The clip transcript may contain errors. Recording identity and earliest-original status are not verified.</p></div>
-<h2>1. Compare the wording</h2><p class="hint">Green highlights = matching word sequences. Amber = possible intervening source text. These are text comparisons, not confirmed video edits.</p><div id="candidates"></div><section id="assessment"></section><div id="context"></div><section id="videos"></section><div id="extraction"></div><div id="warnings" class="notice"></div>
+<section id="videos"></section><h2>2. Compare the wording</h2><p class="hint">Green highlights = matching word sequences. Amber = possible intervening source text. These are text comparisons, not confirmed video edits.</p><div id="candidates"></div><section id="assessment"></section><div id="context"></div><div id="extraction"></div><div id="warnings" class="notice"></div>
 <details class="card"><summary>Timing, calls & estimated cost</summary><pre id="metrics"></pre></details>
 </section>
 <footer>Evidence labels describe the checks completed, not a confidence percentage. Matching words do not establish intent or prove the earliest original.</footer>

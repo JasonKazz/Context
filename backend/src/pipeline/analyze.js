@@ -73,12 +73,13 @@ export async function analyze(input,{signal,onUpdate=()=>{},deadline=Date.now()+
   });
   let ranked=rank(results,queries,url);
   result.candidates=ranked.map(c=>addAlignment(c,result.extraction.transcript,result.extraction.basis));
+  result.videoCandidates=videoCandidates([...results,...result.videoCandidates],result.extraction,url);
   if(!result.candidates.length)result.summary='No supporting source candidate was found within this search. Try a more distinctive spoken quote or another clip.';
   if(result.candidates.length){result.status='candidate';result.summary='Possible sources found. Text alignment shows which provisional words occur in retrieved text; recording identity remains unchecked.';}
   onUpdate({stage:'Candidates available',result:snapshot()});
-  if(remaining()>3500&&(providers.exa.contents||providers.exa.videos)) {
+  if(remaining()>4500&&(providers.exa.contents||providers.exa.videos)) {
    try {
-    await stage('Locating surrounding text and video candidates',Math.min(3000,remaining()-2500),async ctx=>{
+    await stage('Locating surrounding text and video candidates',Math.min(5000,remaining()-4000),async ctx=>{
      const work=[];
      if(ranked[0]&&providers.exa.contents)work.push((async()=>{
       const page=await providers.exa.contents(ranked[0].url,ctx,60000);
@@ -89,23 +90,29 @@ export async function analyze(input,{signal,onUpdate=()=>{},deadline=Date.now()+
      if(providers.exa.videos&&providers.gemini.eventQuery&&result.candidates.some(c=>c.alignment?.matches.length))work.push((async()=>{
       // The candidate title is a discovery clue, not a reference answer or verification.
       let query='';
-      if(providers.gemini.eventQuery){try{const event=await providers.gemini.eventQuery(result.candidates,result.extraction,ctx);if(event){query=`${event.query} ${result.extraction.queries[0]}`;result.eventClue=event;}}catch{}}
+      if(providers.gemini.eventQuery){try{const event=await providers.gemini.eventQuery(result.candidates,result.extraction,ctx);if(event){query=event.query;result.eventClue=event;}}catch{}}
       if(!query)return;
-      const found=await providers.exa.videos(query,ctx);
+      const searches=await Promise.allSettled([providers.exa.videos(query,ctx),...(providers.exa.eventSources?[providers.exa.eventSources(query+' full transcript video',ctx)]:[])]);
+      const found=searches.flatMap(s=>s.status==='fulfilled'?s.value:[]);
+      for(const s of searches)if(s.status==='rejected')result.warnings.push(publicError(s.reason).message);
+      results.push(...found);
       result.videoCandidates=videoCandidates([...found,...result.videoCandidates.map(c=>({...c,text:c.sourceText}))],result.extraction,url,result.eventClue?.query||'');
       onUpdate({stage:'Video candidates available',result:snapshot()});
      })());
      const settled=await Promise.allSettled(work);
+     ranked=rank([...ranked.map(c=>({...c,text:c.sourceText})),...results],queries,url);
+     result.candidates=ranked.map(c=>addAlignment(c,result.extraction.transcript,result.extraction.basis));
+     result.videoCandidates=videoCandidates([...results,...result.videoCandidates],result.extraction,url,result.eventClue?.query||'');
      for(const item of settled)if(item.status==='rejected')result.warnings.push(publicError(item.reason).message);
     });
    }catch(error){result.warnings.push(publicError(error).message);}
   } else result.warnings.push('Not enough time remained to retrieve additional context or search for full-video candidates.');
   if(result.extraction.visualClues&&providers.gemini.inspectVideo&&remaining()>3000){
    try{await stage('Checking candidate video appearance and speech',Math.min(5500,remaining()-1800),async ctx=>{
-    const videos=result.videoCandidates.filter(c=>youtubeUrl(c.url)).slice(0,2);
+    const videos=result.videoCandidates.filter(c=>youtubeUrl(c.url)&&c.eventRelevance>=0&&(c.alignment.matchedWords>=6||c.timedPassages?.length)).slice(0,2);
     await Promise.allSettled(videos.map(async candidate=>{
      try{
-      const check=await providers.gemini.inspectVideo(candidate.url,result.extraction,ctx,parts);
+      const check=await providers.gemini.inspectVideo(candidate.url,result.extraction,ctx,parts,candidate.timedPassages?.[0]?.startSeconds||0);
       candidate.videoCheck=checkedVideo(check,result.extraction);
      }catch{candidate.videoCheck={status:'inconclusive',observations:'Candidate video could not be checked within the remaining budget.'};}
      onUpdate({stage:'Candidate video check available',result:snapshot()});
