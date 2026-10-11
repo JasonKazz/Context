@@ -19,8 +19,10 @@ function render(job){
  renderVideos(result);
  renderAssessment(result);
  $('context').replaceChildren();
- if(result.context?.length){$('context').append(text('h2',result.extraction?.transcript?'Beyond the short clip':'Related-source background'),text('p',result.extraction?.transcript?'These source passages add information beyond the provisional clip transcript. They are not, by themselves, proof of misleading editing.':'The clip could not be transcribed. These articles supply background, but we cannot yet compare what the clip includes.','hint'));for(const item of result.context){const card=text('article','','card');card.append(text('span',`Source ${item.sourceId} · additional source text`,'source-tag'),text('p',item.explanation),text('blockquote',item.quote));const source=result.candidates?.[item.sourceId-1];if(source)card.append(linkTo(source.url,source.title+' ↗'));$('context').append(card);}}
- {const candidate=(result.candidates||[]).find(c=>c.alignment?.continuous&&(c.recordingPage||result.videoCandidates?.some(v=>v.recordingPage&&v.url===c.url)))||(!result.context?.length&&result.candidates?.find(c=>c.alignment?.continuous));if(candidate){const exchange=document.createElement('details');exchange.className='card';exchange.append(text('summary','Read the surrounding exchange'),text('p','The source includes the following surrounding passage. This is evidence to read, not proof that the clip changes its meaning.','hint'),linkTo(candidate.url,candidate.title),highlighted(candidate.alignment.continuous.text,candidate.alignment.continuous.ranges));$('context').append(exchange);}}
+ const points=(result.context||[]).slice(0,3);
+ for(const item of points){const source=result.candidates?.[item.sourceId-1];const detail=document.createElement('details');detail.className='summary-evidence';detail.append(text('summary',item.explanation||'Read supporting context'),text('blockquote',item.quote));if(source)detail.append(linkTo(source.url,source.title+' ↗'));$('context').append(detail);}
+ const effects=(result.assessment?.findings||[]).filter(f=>f.kind!=='no_material_change');
+ if(effects.length){const detail=document.createElement('details');detail.className='summary-evidence';detail.append(text('summary','Why the difference may matter'));for(const f of effects){detail.append(text('p',f.effect),text('blockquote',f.sourceQuote));const source=result.candidates?.[f.sourceId-1];if(source)detail.append(linkTo(source.url,source.title+' ↗'));}$('context').append(detail);}
  $('warnings').replaceChildren(...[...new Set(result.warnings||[])].map(w=>text('p',w)));$('warnings').hidden=!result.warnings?.length;
  $('metrics').textContent=JSON.stringify(result.metrics||{elapsedMs:job.elapsedMs},null,2);
 }
@@ -37,13 +39,14 @@ function highlighted(value,ranges){
 }
 function renderCandidates(result){
  $('candidates').replaceChildren();
- for(const [index,candidate] of (result.candidates||[]).entries()){
+ const ordered=(result.candidates||[]).map((candidate,index)=>({candidate,index})).sort((a,b)=>(b.candidate.alignment?.matchedWords||0)-(a.candidate.alignment?.matchedWords||0)||Number(!!b.candidate.recordingPage)-Number(!!a.candidate.recordingPage)||(b.candidate.alignment?.longestRun||0)-(a.candidate.alignment?.longestRun||0));
+ for(const {index,candidate} of ordered.slice(0,1)){
   const card=text('article','','card source-card');
-  card.append(text('span',`Source ${index+1} · ${candidate.evidenceKind.replaceAll('_',' ')}`,'source-tag'),text('p',candidate.evidence?.label||'Possible source — recording not checked',`evidence-label ${candidate.evidence?.level||'related'}`));
+  card.append(text('span','Strongest available text match','source-tag'),text('p',candidate.evidence?.label||'Possible source — recording not checked',`evidence-label ${candidate.evidence?.level||'related'}`));
   const heading=text('h3','');heading.append(linkTo(candidate.url,candidate.title));card.append(heading,text('p',candidate.evidence?.reason||candidate.support,'hint'));
   const alignment=candidate.alignment;
   if(alignment?.matches.length&&result.extraction?.transcript){
-   const details=document.createElement('details');details.open=index===0;details.append(text('summary',`Compare matched words · ${alignment.matches.length} matching passage${alignment.matches.length===1?'':'s'}`));
+   const details=document.createElement('details');details.open=true;details.append(text('summary',`Compare matched words · ${alignment.matches.length} matching passage${alignment.matches.length===1?'':'s'}`));
    const columns=text('div','','comparison');const clip=text('div','','comparison-column');const source=text('div','','comparison-column');
    clip.append(text('h4',result.extraction.basis==='user_quote'?'Your supplied quote':'Clip transcript · provisional'),highlighted(result.extraction.transcript,alignment.matches.map(m=>({start:m.clipStart,end:m.clipEnd}))));
    source.append(text('h4','Retrieved source text · continuous excerpt'));
@@ -60,6 +63,7 @@ function renderCandidates(result){
   }else card.append(text('blockquote',candidate.excerpt));
   $('candidates').append(card);
  }
+ if(ordered.length>1){const more=document.createElement('details');more.className='other-sources';more.append(text('summary',`Other supporting sources (${ordered.length-1})`));for(const {candidate} of ordered.slice(1)){const row=text('p','');row.append(linkTo(candidate.url,candidate.title+' ↗'));more.append(row);}$('candidates').append(more);}
  if(!result.candidates?.length)$('candidates').append(text('p','No supporting text candidate was found. Try a distinctive spoken quote.'));
 }
 function renderVideos(result){
