@@ -7,7 +7,7 @@
 <form id="form" class="card">
 <label for="url">Video or page link</label><input id="url" type="url" placeholder="https://…" autocomplete="off">
 <p class="hint">Public YouTube segments can be inspected directly. Other links use publicly indexed page text; some platforms block access.</p>
-<div class="row"><div><label for="start">YouTube start time (seconds)</label><input id="start" type="number" min="0" max="86400" value="0"></div><div><label for="file">Or upload a short clip</label><input id="file" type="file" accept=".mp4,.webm,.mp3,.wav,.m4a"><p class="hint">Up to 8 MB. First 30 seconds of audio.</p></div></div>
+<div class="row"><div><label for="start">YouTube start time (seconds)</label><input id="start" type="number" min="0" max="86400" value="0"></div><div><label for="file">Or upload a short clip</label><input id="file" type="file" accept=".mp4,.webm,.mp3,.wav,.m4a"><p class="hint">Up to 8 MB. Up to three minutes; video frames are sampled. Longer files receive partial coverage.</p></div></div>
 <label for="quote">Spoken quote <span class="optional">— optional, useful when a link is blocked</span></label><textarea id="quote" rows="3" maxlength="4000" placeholder="Paste the actual words spoken in the clip…"></textarea>
 <p class="hint">A supplied quote takes priority over automatic transcription. Public link/text/audio is sent to Gemini and/or Exa for processing. Do not submit private content.</p>
 <div class="actions"><button id="submit" type="submit">Find context <span aria-hidden="true">↗</span></button><button id="cancel" type="button" class="secondary" hidden>Cancel</button></div>
@@ -17,7 +17,7 @@
 <section id="report" hidden>
 <div class="report-heading"><h2>Your report</h2><button id="download" class="secondary" type="button">Download JSON</button></div>
 <div class="card"><span id="outcome" class="pill"></span><h3>What we found</h3><p id="summary"></p><p class="hint">Text highlights are computed from the retrieved words. The clip transcript may contain errors. Recording identity and earliest-original status are not verified.</p></div>
-<div id="extraction"></div><section id="videos"></section><section id="assessment"></section><h2>Compare the evidence</h2><p class="hint">Green highlights = matching word sequences. Amber = possible intervening source text. These are text comparisons, not confirmed video edits.</p><div id="candidates"></div><div id="context"></div><div id="warnings" class="notice"></div>
+<h2>1. Compare the wording</h2><p class="hint">Green highlights = matching word sequences. Amber = possible intervening source text. These are text comparisons, not confirmed video edits.</p><div id="candidates"></div><section id="assessment"></section><div id="context"></div><section id="videos"></section><div id="extraction"></div><div id="warnings" class="notice"></div>
 <details class="card"><summary>Timing, calls & estimated cost</summary><pre id="metrics"></pre></details>
 </section>
 <footer>Evidence labels describe the checks completed, not a confidence percentage. Matching words do not establish intent or prove the earliest original.</footer>

@@ -13,7 +13,7 @@ function render(job){
  if(job.state==='running'&&!result.candidates?.length)return;
  $('report').hidden=false;$('outcome').textContent=labels[result.status]||'Inconclusive';$('summary').textContent=result.summary;
  $('extraction').replaceChildren();
- if(result.extraction){const details=document.createElement('details');details.className='card';details.append(text('summary',`Discovery clues · ${result.extraction.basis.replaceAll('_',' ')}`),text('p',result.extraction.description||''));if(result.extraction.transcript)details.append(text('blockquote',result.extraction.transcript));details.append(text('p',`Search queries: ${(result.extraction.queries||[]).join(' / ')}`,'hint'));$('extraction').append(details);}
+ if(result.extraction){const details=document.createElement('details');details.className='card';details.append(text('summary',`Discovery clues · ${result.extraction.basis.replaceAll('_',' ')}`),text('p',result.extraction.description||''),text('p',result.extraction.coverage||'','hint'),text('p',result.extraction.visualClues||'','hint'));if(result.extraction.transcript)details.append(text('blockquote',result.extraction.transcript));details.append(text('p',`Search queries: ${(result.extraction.queries||[]).join(' / ')}`,'hint'));$('extraction').append(details);}
  renderCandidates(result);
  renderVideos(result);
  renderAssessment(result);
@@ -44,7 +44,9 @@ function renderCandidates(result){
    const details=document.createElement('details');details.open=index===0;details.append(text('summary',`Compare matched words · ${alignment.matches.length} matching passage${alignment.matches.length===1?'':'s'}`));
    const columns=text('div','','comparison');const clip=text('div','','comparison-column');const source=text('div','','comparison-column');
    clip.append(text('h4',result.extraction.basis==='user_quote'?'Your supplied quote':'Clip transcript · provisional'),highlighted(result.extraction.transcript,alignment.matches.map(m=>({start:m.clipStart,end:m.clipEnd}))));
-   source.append(text('h4','Matching source passages + surrounding text'));
+   source.append(text('h4','Retrieved source text · continuous excerpt'));
+   if(alignment.continuous){const c=alignment.continuous;source.append(text('p',`${c.hasEarlierText?'Earlier text omitted. ':''}${c.hasLaterText?'More text follows. ':''}This page may quote a broadcast clip rather than the complete speech.`,'hint'),highlighted(c.text,c.ranges));if(c.truncatedMatches)source.append(text('p','Some matches fall beyond this bounded excerpt. Open the source for the remaining text.','hint'));}
+   else
    for(const [i,passage] of alignment.passages.entries()){
     source.append(text('p',`Passage ${i+1}${passage.hasEarlierText?' · earlier source text not shown':''}`,'hint'),highlighted(passage.text,[{start:passage.highlightStart,end:passage.highlightEnd}]));
    }
@@ -59,16 +61,16 @@ function renderCandidates(result){
  if(!result.candidates?.length)$('candidates').append(text('p','No supporting text candidate was found. Try a distinctive spoken quote.'));
 }
 function renderVideos(result){
- $('videos').replaceChildren();$('videos').append(text('h2','Possible longer recordings'));
+ $('videos').replaceChildren();$('videos').append(text('h2','3. Find the recording'));
  if(!result.videoCandidates?.length){$('videos').append(text('p','No additional video candidate is available from this run.','hint'));return;}
- $('videos').append(text('p','Public video-search results. Full length, exact event and recording identity are not confirmed.','hint'));
- const grid=text('div','','video-grid');
- for(const candidate of result.videoCandidates){const card=text('article','','card');card.append(text('span',candidate.evidence?.level==='related'?'Search lead only':'Matching indexed words · video not checked','source-tag'));const title=text('h3','');title.append(linkTo(candidate.url,candidate.title));card.append(title,text('p',candidate.evidence?.reason||candidate.support,'hint'),linkTo(candidate.url,'Open video ↗'));grid.append(card);}
- $('videos').append(grid);
+ $('videos').append(text('p','At most two YouTube candidates receive a sampled appearance and speech check. Only their first 90 seconds are checked; a match later in a long video can be missed. Full length and original status remain unconfirmed.','hint'));
+ const grid=text('div','','video-grid');const leads=document.createElement('details');leads.append(text('summary','Other search leads · not established as the same recording'));const leadGrid=text('div','','video-grid');leads.append(leadGrid);let supported=0;
+ for(const candidate of result.videoCandidates){const card=text('article','','card');card.append(text('span',candidate.evidence?.level==='related'?'Search lead only':'Matching indexed words · video not checked','source-tag'));const title=text('h3','');title.append(linkTo(candidate.url,candidate.title));card.append(title,text('p',candidate.evidence?.reason||candidate.support,'hint'),linkTo(candidate.url,'Open video ↗'));const check=candidate.videoCheck;if(check){card.append(text('p',check.status==='supported_sample'?'Appearance + spoken passage support this sample':check.status==='different_sample'?'Different appearance in the inspected sample':'Video check inconclusive','evidence-label'),text('p',check.observations,'hint'),text('p',check.scope||'','hint'));}if(check?.status==='supported_sample'){grid.append(card);supported++;}else leadGrid.append(card);}
+ if(!supported)$('videos').append(text('p','No recording has passed both the appearance and spoken-passage checks. The transcript match is still useful evidence.','notice'));$('videos').append(grid,leads);
 }
 function renderAssessment(result){
  const assessment=result.assessment;$('assessment').replaceChildren();if(!assessment)return;
- $('assessment').append(text('h2','Could the missing context change the meaning?'));
+ $('assessment').append(text('h2','2. What context does this add?'));
  const titles={insufficient_evidence:'Insufficient evidence to assess',potential_context_difference:'Potential context difference · AI interpretation',no_material_change_found:'No material change identified in these excerpts'};
  const card=text('div','','card');card.append(text('h3',titles[assessment.status]||titles.insufficient_evidence),text('p',assessment.reason||''),text('p',assessment.intent,'intent-note'));
  for(const finding of assessment.findings||[]){const box=text('div','','finding');box.append(text('p',`Source ${finding.sourceId} · ${finding.kind.replaceAll('_',' ')}`,'source-tag'));const pair=text('div','','comparison');const clip=text('div','');clip.append(text('h4','Clip wording'),text('blockquote',finding.clipQuote));const source=text('div','');source.append(text('h4','Source wording'),text('blockquote',finding.sourceQuote));pair.append(clip,source);box.append(pair,text('p',finding.effect));card.append(box);}

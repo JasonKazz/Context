@@ -8,7 +8,7 @@ import {rank} from './ranking.js';
 import {discoveryQueries} from './queries.js';
 import {addAlignment} from './alignment.js';
 import {emptyAssessment} from './assessment.js';
-import {videoCandidates,videoQuery} from './videos.js';
+import {videoCandidates,videoQuery,checkedVideo} from './videos.js';
 export async function analyze(input,{signal,onUpdate=()=>{},deadline=Date.now()+config.deadlineMs,providers={exa,gemini}}={}) {
  const started=Date.now();const metrics={calls:{exa:0,gemini:0},inputTokens:0,outputTokens:0,estimatedCostUsd:0,exaReportedCostUsd:0,costNotes:new Set(),stages:[]};
  const result={status:'inconclusive',summary:'No source candidate has been established.',context:[],candidates:[],videoCandidates:[],assessment:emptyAssessment(),warnings:[],extraction:null,verification:'Not performed. Indexed text and model interpretations do not prove recording identity.',originality:'Earliest original unknown.'};
@@ -31,10 +31,10 @@ export async function analyze(input,{signal,onUpdate=()=>{},deadline=Date.now()+
   } else {
    const yt=url?youtubeUrl(url):null;
    if(input.media) {
-    const part=await stage('Preparing first 30 seconds of audio',2500,ctx=>audioPart(input.media,ctx.signal));parts=[part];
+    if(input.media.mimeType.startsWith('video/')){parts=[{inlineData:input.media,videoMetadata:{startOffset:'0s',endOffset:'180s',fps:0.5}}];result.warnings.push('Uploaded video: requested up to 180 seconds with sampled visual frames. Longer recordings receive partial coverage.');}else{const part=await stage('Preparing up to three minutes of audio',2500,ctx=>audioPart(input.media,ctx.signal));parts=[part];result.warnings.push('Uploaded audio: up to 180 seconds processed. No visual evidence is available.');}
    } else if(yt) {
-    parts=[{fileData:{fileUri:yt},videoMetadata:{startOffset:`${input.startSeconds}s`,endOffset:`${input.startSeconds+30}s`,fps:0.1}}];
-    result.warnings.push(`Only the 30-second segment starting at ${input.startSeconds}s was requested. Model-derived speech is a discovery clue.`);
+    parts=[{fileData:{fileUri:yt},videoMetadata:{startOffset:`${input.startSeconds}s`,endOffset:`${input.startSeconds+180}s`,fps:0.5}}];
+    result.warnings.push(`Requested the complete clip if it ends within 180 seconds of ${input.startSeconds}s; otherwise coverage is partial. Speech and visual observations are model-derived, not frame-by-frame verification.`);
    } else {
     metadata=await stage('Retrieving indexed page text',3000,ctx=>providers.exa.contents(url,ctx));
     parts=[{text:JSON.stringify({title:metadata.title,text:metadata.text})}];
@@ -43,7 +43,7 @@ export async function analyze(input,{signal,onUpdate=()=>{},deadline=Date.now()+
    try {
     const extraction=await stage('Extracting discovery clues',yt?7000:5000,ctx=>providers.gemini.extract(parts,ctx));
     if(!extraction.queries.length) throw new AppError('NO_CLUES','No usable speech or identifying text was extracted. Upload a short clip or paste its words.',422);
-    result.extraction={...extraction,transcript:metadata?'':extraction.transcript,basis:metadata?'indexed_page':input.media?'uploaded_audio':'youtube_segment'};
+    result.extraction={...extraction,coverage:metadata?'Indexed page only':`Up to 180 seconds from ${input.startSeconds||0}s; model-reported ending: ${extraction.reachedEnd===true?'reached': 'not established'}`,transcript:metadata?'':extraction.transcript,basis:metadata?'indexed_page':input.media?'uploaded_audio':'youtube_segment'};
    } catch(error) {
     if(signal?.aborted) throw error;
     result.warnings.push(publicError(error).message);
@@ -77,9 +77,10 @@ export async function analyze(input,{signal,onUpdate=()=>{},deadline=Date.now()+
      })());
      if(providers.exa.videos)work.push((async()=>{
       // The candidate title is a discovery clue, not a reference answer or verification.
-      const query=videoQuery(result.candidates,result.extraction);
+      let query=videoQuery(result.candidates,result.extraction);
+      if(providers.gemini.eventQuery){try{const event=await providers.gemini.eventQuery(result.candidates,result.extraction,ctx);if(event){query=`${event.query} ${result.extraction.queries[0]}`;result.eventClue=event;}}catch{}}
       const found=await providers.exa.videos(query,ctx);
-      result.videoCandidates=videoCandidates(found,result.extraction,url);
+      result.videoCandidates=videoCandidates(found,result.extraction,url,result.eventClue?.query||'');
       onUpdate({stage:'Video candidates available',result:snapshot()});
      })());
      const settled=await Promise.allSettled(work);
@@ -87,6 +88,18 @@ export async function analyze(input,{signal,onUpdate=()=>{},deadline=Date.now()+
     });
    }catch(error){result.warnings.push(publicError(error).message);}
   } else result.warnings.push('Not enough time remained to retrieve additional context or search for full-video candidates.');
+  if(result.extraction.visualClues&&providers.gemini.inspectVideo&&remaining()>3000){
+   try{await stage('Checking candidate video appearance and speech',Math.min(5500,remaining()-1800),async ctx=>{
+    const videos=result.videoCandidates.filter(c=>youtubeUrl(c.url)).slice(0,2);
+    await Promise.allSettled(videos.map(async candidate=>{
+     try{
+      const check=await providers.gemini.inspectVideo(candidate.url,result.extraction,ctx,parts);
+      candidate.videoCheck=checkedVideo(check,result.extraction);
+     }catch{candidate.videoCheck={status:'inconclusive',observations:'Candidate video could not be checked within the remaining budget.'};}
+     onUpdate({stage:'Candidate video check available',result:snapshot()});
+    }));
+   });}catch(error){result.warnings.push(publicError(error).message);}
+  }
   if(!result.candidates.length){result.summary=result.videoCandidates.length?'Possible video links were found, but no supporting source-text passage was established.':'No supporting source candidate was found. Try a distinctive spoken quote.';return snapshot();}
   if(remaining()>700) {
    try {

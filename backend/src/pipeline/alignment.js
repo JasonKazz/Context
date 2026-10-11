@@ -33,7 +33,11 @@ export function alignText(clipText,sourceText) {
   const start=Math.max(0,match.sourceStart-260),end=Math.min(sourceText.length,match.sourceEnd+360);
   return {matchId:match.id,text:sourceText.slice(start,end),highlightStart:match.sourceStart-start,highlightEnd:match.sourceEnd-start,sourceCharacterStart:start,hasEarlierText:start>0,hasLaterText:end<sourceText.length};
  });
- return {matches,passages,gaps,reorders,matchedWords,clipWords:clip.length,longestRun,sourceCharactersInspected:sourceText.length,method:'Exact consecutive words, ignoring case and punctuation; minimum six words. Transcription errors can prevent matches.',limitation:'Text agreement does not prove recording identity. Source text may be an article, captions or an incomplete transcript. Gaps may reflect editing, another recording or transcription differences.'};
+ const first=matches.length?Math.min(...matches.map(m=>m.sourceStart)):0;
+ const last=matches.length?Math.max(...matches.map(m=>m.sourceEnd)):0;
+ const contextStart=Math.max(0,first-600),contextEnd=Math.min(sourceText.length,Math.max(last+800,contextStart+2000),contextStart+18000);
+ const continuous=matches.length?{text:sourceText.slice(contextStart,contextEnd),ranges:matches.filter(m=>m.sourceStart>=contextStart&&m.sourceEnd<=contextEnd).map(m=>({start:m.sourceStart-contextStart,end:m.sourceEnd-contextStart})),hasEarlierText:contextStart>0,hasLaterText:contextEnd<sourceText.length,truncatedMatches:matches.some(m=>m.sourceEnd>contextEnd)}:null;
+ return {continuous,matches,passages,gaps,reorders,matchedWords,clipWords:clip.length,longestRun,sourceCharactersInspected:sourceText.length,method:'Exact consecutive words, ignoring case and punctuation; minimum six words. Transcription errors can prevent matches.',limitation:'Text agreement does not prove recording identity. Source text may be an article, captions or an incomplete transcript. Gaps may reflect editing, another recording or transcription differences.'};
 }
 export function evidenceLabel(alignment,basis) {
  if(!alignment.matches.length)return {level:'related',label:'Related source — no passage match',reason:'Search relevance only; no run of six spoken words was found in the retrieved text.'};

@@ -10,7 +10,7 @@ export async function audioPart(media,signal) {
   const input=join(directory,'input');const output=join(directory,'audio.wav');
   await writeFile(input,Buffer.from(media.data,'base64'),{mode:0o600});
   await new Promise((resolve,reject)=>{
-   const child=spawn(config.ffmpeg,['-nostdin','-hide_banner','-loglevel','error','-threads','1','-protocol_whitelist','file,pipe','-i',input,'-t','30','-vn','-ac','1','-ar','16000','-fs','2000000',output],{stdio:'ignore',signal,killSignal:'SIGKILL'});
+   const child=spawn(config.ffmpeg,['-nostdin','-hide_banner','-loglevel','error','-threads','1','-protocol_whitelist','file,pipe','-i',input,'-t','180','-vn','-ac','1','-ar','16000','-fs','6000000',output],{stdio:'ignore',signal,killSignal:'SIGKILL'});
    child.once('error',()=>reject(new AppError('MEDIA_PROCESSING','Cannot decode this clip. Check ffmpeg is installed or try MP4/MP3.',422)));
    child.once('exit',code=>code===0?resolve():reject(new AppError('MEDIA_PROCESSING','This file could not be decoded within the time budget. Try a shorter MP4/MP3.',422)));
   });

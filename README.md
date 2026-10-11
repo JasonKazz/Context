@@ -14,9 +14,9 @@ Node 22.13+ (tested on Node 26). `ffmpeg` is needed only for uploaded media. No 
 
 ## Supported discovery routes
 
-- Public YouTube URL: ask Gemini for discovery clues from a 30-second segment, then search Exa.
+- Public YouTube URL: ask Gemini for discovery clues from a up-to-180-second segment, then search Exa.
 - Other public URL: retrieve accessible indexed page text with Exa; extract clues, then search. **This does not mean the video itself was watched.** Blocked/private/unindexed links may fail.
-- Upload MP4/WebM/MP3/M4A/WAV up to 8 MB: extract first 30 seconds of audio locally, then Gemini and Exa.
+- Upload MP4/WebM/MP3/M4A/WAV up to 8 MB: process up to 180 seconds; video includes sampled visual frames, audio-only files are decoded locally. Then Gemini and Exa.
 - Optional spoken quote (also works alone): search using user-supplied words; no claim of independent transcription.
 
 ## Honest scope
@@ -27,7 +27,9 @@ All suggestions are **unverified candidates**. Excerpts come from public indexed
 
 The report highlights exact runs of at least six words in the provisional clip transcript and retrieved source text. Evidence labels explain matching word counts, not confidence percentages. Adjacent clip passages separated in a source can expose possible omissions or reordered text; these are not confirmed video edits. The AI context assessment accepts only quotations found verbatim in supplied evidence, and may return insufficient evidence. It cannot determine malicious intent.
 
-A bounded parallel search adds possible longer video links. Their full length and recording identity remain unchecked. No full candidate videos are downloaded or transcribed.
+A bounded search uses spoken wording and cited event clues to find possible longer recordings. At most two YouTube candidates receive a model comparison: 12 seconds of submitted visual reference versus the candidate’s first 90 seconds, sampled at 0.5 fps. A supported sample requires both consistent appearance and a spoken-word match of at least 12 consecutive words. Different opening scenes do not rule out a match later. Full length, exact recording identity and original status remain unchecked. Unconfirmed leads are collapsed. No full candidate videos are downloaded or transcribed.
+
+The comparison shows one continuous, bounded source excerpt rather than duplicate overlapping windows. It may be an article or broadcast quoting the clip, not the complete original speech. Uploaded videos use Gemini inline input; coverage ending is model-reported, not independently measured. Clips longer than three minutes receive partial analysis.
 
 ## Architecture
 

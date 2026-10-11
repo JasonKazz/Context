@@ -21,6 +21,10 @@ export async function search(query,ctx) {
 }
 
 export async function videos(query,ctx) {
- const result=await call('search',{query:`${query.slice(0,300)} full speech full interview recording`,type:'fast',numResults:4,includeDomains:['youtube.com','vimeo.com','c-span.org'],contents:{text:{maxCharacters:16000}}},ctx);
- return result.results||[];
+ const searches=await Promise.allSettled([
+  call('search',{query:query.slice(0,600),type:'fast',numResults:3,includeDomains:['youtube.com'],contents:{text:{maxCharacters:16000}}},ctx),
+  call('search',{query:query.slice(0,600),type:'fast',numResults:3,includeDomains:['c-span.org','vimeo.com'],contents:{text:{maxCharacters:16000}}},ctx)
+ ]);
+ if(searches.every(s=>s.status==='rejected'))throw searches[0].reason;
+ return searches.flatMap(s=>s.status==='fulfilled'?s.value.results||[]:[]);
 }

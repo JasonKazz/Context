@@ -36,5 +36,25 @@ test('video links are provider results, never invented timestamps or verified fu
 test('video queries cannot treat an unrelated top article as the identified event',async()=>{
  const {videoQuery}=await import('../backend/src/pipeline/videos.js');
  const query=videoQuery([{title:'Unrelated convention',alignment:{matches:[]}}],{queries:['spoken phrase','distinctive tail speaker'],description:'speaker'});
- assert.equal(query,'distinctive tail speaker');
+ assert.ok(query.includes('spoken phrase'));assert.ok(query.includes('speaker'));assert.ok(!query.includes('Unrelated convention'));
+});
+
+test('continuous source excerpt preserves intervening text and all nearby highlights',()=>{
+ const r=alignText(`${first} ${last}`,full);assert.ok(r.continuous.text.includes(middle));assert.equal(r.continuous.ranges.length,2);
+ for(const range of r.continuous.ranges)assert.ok(`${first} ${last}`.includes(r.continuous.text.slice(range.start,range.end)));
+ assert.equal(r.continuous.truncatedMatches,false);
+});
+
+test('candidate appearance alone cannot pass the video sample check',async()=>{
+ const {checkedVideo}=await import('../backend/src/pipeline/videos.js');const extraction={transcript:full,basis:'youtube_segment'};
+ assert.equal(checkedVideo({visual:'consistent',transcript:''},extraction).status,'inconclusive');
+ assert.equal(checkedVideo({visual:'different',transcript:full},extraction).status,'different_sample');
+ assert.equal(checkedVideo({visual:'unknown',transcript:full},extraction).status,'inconclusive');
+ assert.equal(checkedVideo({visual:'consistent',transcript:full},extraction).status,'supported_sample');
+ assert.equal(checkedVideo({visual:'consistent',transcript:full},extraction).verified,undefined);
+});
+
+test('event detail ranks a matching venue ahead of generic titles and excludes non-video pages',()=>{
+ const r=videoCandidates([{url:'https://youtube.com/watch?v=aaaaaaaaaaa',title:'Trump Accounts remarks'},{url:'https://youtube.com/watch?v=bbbbbbbbbbb',title:'Trump rings bell in Oval Office for Accounts'},{url:'https://c-span.org/classroom/document/123',title:'Oval Office'}],{transcript:'',basis:'youtube_segment'},'', 'Trump Accounts Oval Office full video');
+ assert.equal(r.length,2);assert.ok(r[0].url.includes('bbbbbbbbbbb'));assert.equal(r[0].fullLengthVerified,false);
 });
