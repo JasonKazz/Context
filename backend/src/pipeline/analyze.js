@@ -1,5 +1,5 @@
-import {hasRecordingEvidence} from '../../../shared/contracts.js';
-import {archiveRecordingLinks} from './recording-links.js';
+import {hasRecordingEvidence,isRecordingLead} from '../../../shared/contracts.js';
+import {archiveRecordingLinks,publisherRecordingMetadata} from './recording-links.js';
 import {fallbackEvent,contextOptions,titleEvent} from './context.js';
 import {config} from '../config.js';
 import {AppError,publicError} from '../errors.js';
@@ -98,11 +98,11 @@ export async function analyze(input,{signal,onUpdate=()=>{},deadline=Date.now()+
       if(!query&&providers.gemini.eventQuery){try{const event=await providers.gemini.eventQuery(result.candidates,result.extraction,ctx);if(event){query=event.query;result.eventClue=event;}}catch{}}
       if(!query){const event=fallbackEvent(result.candidates,result.extraction);if(event){query=event.query;result.eventClue=event;result.warnings.push('Event-model extraction was unavailable; searched source wording instead.');}}
       if(!query)return;
-      const searches=await Promise.allSettled([providers.exa.videos(query,ctx),...(providers.exa.eventSources?[providers.exa.eventSources(query+' full transcript video',ctx)]:[])]);
+      const searches=await Promise.allSettled([providers.exa.videos(query,ctx),...(providers.exa.recordings?[providers.exa.recordings(query,ctx)]:[]),...(providers.exa.eventSources?[providers.exa.eventSources(query+' full transcript video',ctx)]:[])]);
       const found=searches.flatMap(s=>s.status==='fulfilled'?s.value:[]);
       for(const s of searches)if(s.status==='rejected')result.warnings.push(publicError(s.reason).message);
       if(providers.exa.publisherVideos){
-       const publishers=found.filter(page=>{try{return /\.(gov|edu)$/.test(new URL(page.url).hostname)&&addAlignment({sourceText:page.text||''},result.extraction.transcript,result.extraction.basis).alignment.matchedWords>=6;}catch{return false;}}).sort((a,b)=>Number(new URL(b.url).hostname.includes('archives'))-Number(new URL(a.url).hostname.includes('archives')));
+       const publishers=found.filter(page=>{try{return addAlignment({sourceText:page.text||''},result.extraction.transcript,result.extraction.basis).alignment.matchedWords>=6;}catch{return false;}}).sort((a,b)=>Number(new URL(b.url).hostname.includes('archives'))-Number(new URL(a.url).hostname.includes('archives')));
        if(publishers[0])try{found.push(...await providers.exa.publisherVideos(query,new URL(publishers[0].url).hostname,ctx));}catch{result.warnings.push('Publisher recording search did not complete within its budget.');}
       }
       results.push(...found);
@@ -117,6 +117,17 @@ export async function analyze(input,{signal,onUpdate=()=>{},deadline=Date.now()+
     });
    }catch(error){result.warnings.push(publicError(error).message);}
   } else result.warnings.push('Not enough time remained to retrieve additional context or search for full-video candidates.');
+  if(remaining()>4500){
+   const pages=result.videoCandidates.filter(c=>c.publisherVideo&&isRecordingLead(c)).slice(0,2);
+   if(pages.length)try{await stage('Checking publisher player metadata',1200,async ctx=>{
+    await Promise.allSettled(pages.map(async candidate=>{
+     try{const metadata=await publisherRecordingMetadata(candidate.url,ctx.signal);candidate.playerMetadata=metadata;
+      const embeds=[...new Set(metadata.map(m=>m.embedUrl).filter(Boolean))];
+      if(embeds.length===1)candidate.playerUrl=embeds[0];
+     }catch{candidate.metadataCheck='Publisher metadata unavailable within the time budget; open the publisher page.';}
+    }));
+   });}catch{}
+  }
   // Preserve the archive's own link relation without pretending its text was checked in the video.
   let archive=result.videoCandidates.find(c=>c.recordingPage&&c.timedPassages?.length&&new URL(c.url).hostname==='trump-archive.com');
   if(!archive&&!result.extraction.transcript){const page=results.find(c=>{try{return new URL(c.url).hostname==='trump-archive.com'&&new URL(c.url).pathname.startsWith('/item/');}catch{return false;}});if(page)archive=addAlignment({...page,sourceText:page.text,recordingPage:true,timedPassages:[],verification:'unverified',evidenceKind:'event_search_archive'},'',result.extraction.basis);}
@@ -128,10 +139,10 @@ export async function analyze(input,{signal,onUpdate=()=>{},deadline=Date.now()+
   });}catch{result.warnings.push('The transcript was found, but its recording link could not be retrieved within the budget.');}}
   if(result.extraction.visualClues&&providers.gemini.inspectVideo&&remaining()>3000){
    try{await stage('Checking candidate video appearance and speech',Math.min(5500,remaining()-1800),async ctx=>{
-    const videos=result.videoCandidates.filter(c=>youtubeUrl(c.url)&&hasRecordingEvidence(c)).slice(0,2);
+    const videos=result.videoCandidates.filter(c=>youtubeUrl(c.playerUrl||c.url)&&isRecordingLead(c)).slice(0,2);
     await Promise.allSettled(videos.map(async candidate=>{
      try{
-      const check=await providers.gemini.inspectVideo(candidate.url,result.extraction,ctx,parts,candidate.timedPassages?.[0]?.startSeconds||0);
+      const check=await providers.gemini.inspectVideo(candidate.playerUrl||candidate.url,result.extraction,ctx,parts,candidate.timedPassages?.[0]?.startSeconds||0);
       candidate.videoCheck=checkedVideo(check,result.extraction);
      }catch{candidate.videoCheck={status:'inconclusive',observations:'Candidate video could not be checked within the remaining budget.'};}
      onUpdate({stage:'Candidate video check available',result:snapshot()});

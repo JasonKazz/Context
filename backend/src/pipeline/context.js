@@ -21,7 +21,7 @@ function compactQuery(value){const seen=new Set();return (value.match(/[\p{L}\p{
 export function titleEvent(candidates,extraction){
  const source=candidates.find(c=>c.alignment?.longestRun>=12&&/\b(?:speech|address|commencement|interview|convention)\b/i.test(c.title)&&/\b(?:19|20)\d{2}\b/.test(c.title));
  if(!source)return null;
- return {query:source.title.replace(/\s*[|].*$/,'').replace(/^(?:full text|transcript)\s*:\s*/i,'')+' full speech video',supportingQuote:source.title,method:'matched_source_title'};
+ return {query:source.title.replace(/\s*[|].*$/,'').replace(/\s+-\s+[^-]+$/,'').replace(/^(?:full text|transcript)\s*:\s*/i,'')+' full speech video',supportingQuote:source.title,method:'matched_source_title'};
 }
 export function fallbackEvent(candidates,extraction){
  for(const c of candidates){if(extraction.transcript&&!c.alignment?.matches.length)continue;

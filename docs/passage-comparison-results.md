@@ -30,3 +30,15 @@ The checks identified airplane/news-studio samples as visually inconsistent. No 
 Provider capabilities were checked against official [Gemini video documentation](https://ai.google.dev/gemini-api/docs/video-understanding) and [Exa contents documentation](https://exa.ai/docs/reference/get-contents). No additional provider or subscription was introduced.
 
 Final browser smoke test with direct reference/candidate frames: 7.766s server time. Both inspected candidate openings showed different settings, so neither was promoted. The continuous highlighted excerpt and complete short-clip transcript rendered correctly. A subsequent deterministic venue-ranking improvement is unit-tested; its effect on live search accuracy remains unmeasured.
+
+
+## Publisher recording discovery, October 11
+
+Implemented an unrestricted Exa recording search alongside host-specific and source-text searches; YouTube search retrieves eight candidates. Publisher video pages can be retained without indexed transcripts. Event-title/year agreement is a likely-recording label, never passage verification. Different speaker/year fixtures are rejected; related links cannot inherit the parent's event identity; publisher homepages are excluded. Candidate inspection accepts metadata leads independently of text matching. Publisher metadata retrieval checks public DNS before requesting and at connection time, does not redirect, limits responses to 600 KB, and shares a 1.2-second stage deadline for at most two pages.
+
+Live reruns used existing known clips (not an unseen benchmark), fresh provider requests, no prerecorded extraction or supplied reference video:
+- Biden `tSj9gkgCM8Q`: 14.842 seconds server analysis, 219 matching transcript words; PBS's 2016 DNC video page returned as a likely event recording. Publisher player retrieval did not establish audiovisual identity.
+- Obama `3XPuGqqWLtk`: 9.479 seconds, 59 matching transcript words; retained the publisher-linked YouTube recording. Candidate sample check inconclusive.
+- After restarting, Biden through the asynchronous HTTP API: 11.012 seconds server / 11.091 seconds local HTTP submission-to-result polling; Gemini returned incomplete extraction output, title fallback produced no supported recording. This is a real failure, not a successful source match.
+
+An earlier direct diagnostic omitted normal input validation and sent an undefined media start offset. Its provider rejection is a harness error, excluded from the valid runs above. No universal latency or discovery-accuracy claim follows from these tests. 48 deterministic tests pass; these do not establish discovery accuracy. No new provider subscription was introduced.

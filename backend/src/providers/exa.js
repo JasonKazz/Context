@@ -22,7 +22,7 @@ export async function search(query,ctx) {
 
 export async function videos(query,ctx) {
  const searches=await Promise.allSettled([
-  call('search',{query:query.slice(0,600),type:'fast',numResults:3,includeDomains:['youtube.com'],contents:{text:{maxCharacters:16000}}},ctx),
+  call('search',{query:query.slice(0,600),type:'fast',numResults:8,includeDomains:['youtube.com'],contents:{text:{maxCharacters:16000}}},ctx),
   call('search',{query:query.slice(0,600),type:'fast',numResults:3,includeDomains:['c-span.org','vimeo.com'],contents:{text:{maxCharacters:16000}}},ctx)
  ]);
  if(searches.every(s=>s.status==='rejected'))throw searches[0].reason;
@@ -38,5 +38,10 @@ export async function eventSources(query,ctx){
 // One bounded search on a publisher already discovered through matching source text.
 export async function publisherVideos(query,domain,ctx){
  const result=await call('search',{query:query.slice(0,550),type:'auto',numResults:5,includeDomains:[domain],contents:{text:{maxCharacters:30000},extras:{links:20}}},ctx);
+ return result.results||[];
+}
+
+export async function recordings(query,ctx){
+ const result=await call('search',{query,type:'auto',numResults:8,contents:{text:{maxCharacters:5000},extras:{links:20}}},ctx);
  return result.results||[];
 }

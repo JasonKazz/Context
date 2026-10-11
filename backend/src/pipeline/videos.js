@@ -1,4 +1,4 @@
-import {hasRecordingEvidence} from '../../../shared/contracts.js';
+import {hasRecordingEvidence,isRecordingLead} from '../../../shared/contracts.js';
 import {youtubeUrl,safeEvidenceUrl} from '../retrieval.js';
 import {timedPassages} from './passages.js';
 import {addAlignment} from './alignment.js';
@@ -16,14 +16,15 @@ export function videoCandidates(results,extraction,inputUrl='',eventQuery='') {
  return [...results,...linked].sort((a,b)=>(b.parentMatchedWords||0)-(a.parentMatchedWords||0)||String(b.text||b.sourceText||'').length-String(a.text||a.sourceText||'').length).flatMap(item=>{
   const url=safeEvidenceUrl(item.url);if(!url)return [];
   const u=new URL(url);const host=u.hostname.replace(/^www\./,'');
-  const direct=['youtube.com','youtu.be','vimeo.com','c-span.org'].includes(host);
+  const direct=!!youtubeUrl(url)||host==='vimeo.com'&&/^\/\d+$/.test(u.pathname)||host==='c-span.org';
+  const publisher=/\/(?:video|videos|watch)\//i.test(u.pathname)||/\bwatch\b.{0,100}\b(?:speech|interview|address)\b/i.test(item.title||'');
   const timed=timedPassages(String(item.text||item.sourceText||'').slice(0,90000),extraction.transcript||'');
-  if(!direct&&!timed.length)return [];
+  if(!direct&&!timed.length&&(!publisher||u.pathname==='/'))return [];
   if(host==='c-span.org'&&!/^\/(program|clip|event)\//.test(u.pathname))return [];
   const canonical=youtubeUrl(url)||url;if(canonical===inputCanonical||seen.has(canonical))return [];seen.add(canonical);
   const sourceText=String(item.text||item.sourceText||'').slice(0,90000);const title=String(item.title||'Video search result').slice(0,300);
-  return [addAlignment({url:canonical,title,excerpt:sourceText.slice(0,1200),sourceText,linkedFrom:item.linkedFrom,transcriptUrl:item.transcriptUrl,parentMatchedWords:item.parentMatchedWords||0,parentLongestRun:item.parentLongestRun||0,timedPassages:timed,recordingPage:!direct,eventRelevance:eventScore(title,eventQuery),evidenceKind:item.parentMatchedWords>=6?'matched_transcript_link':direct?'video_indexed_text':'timestamped_transcript',support:'Returned by a search for a longer recording. Duration, completeness and recording identity have not been checked.',verification:'unverified',fullLengthVerified:false},extraction.transcript,extraction.basis)];
- }).sort((a,b)=>Number(hasRecordingEvidence(b))-Number(hasRecordingEvidence(a))||Math.max(b.alignment.matchedWords,b.parentMatchedWords||0)-Math.max(a.alignment.matchedWords,a.parentMatchedWords||0)||b.eventRelevance-a.eventRelevance).slice(0,5);
+  return [addAlignment({url:canonical,title,excerpt:sourceText.slice(0,1200),sourceText,linkedFrom:item.linkedFrom,transcriptUrl:item.transcriptUrl,parentMatchedWords:item.parentMatchedWords||0,parentLongestRun:item.parentLongestRun||0,timedPassages:timed,recordingPage:!direct,publisherVideo:publisher,eventMatch:matchEvent(title,item.linkedFrom?'':eventQuery),eventRelevance:eventScore(title,eventQuery),evidenceKind:item.parentMatchedWords>=6?'matched_transcript_link':direct?'video_indexed_text':publisher?'publisher_video':'timestamped_transcript',support:'Returned by a search for a longer recording. Duration, completeness and recording identity have not been checked.',verification:'unverified',fullLengthVerified:false},extraction.transcript,extraction.basis)];
+ }).sort((a,b)=>Number(isRecordingLead(b))-Number(isRecordingLead(a))||Number(hasRecordingEvidence(b))-Number(hasRecordingEvidence(a))||Math.max(b.alignment.matchedWords,b.parentMatchedWords||0)-Math.max(a.alignment.matchedWords,a.parentMatchedWords||0)||b.eventRelevance-a.eventRelevance).slice(0,8);
 }
 
 export function videoQuery(candidates,extraction){
@@ -42,4 +43,16 @@ function eventScore(title,query){
  if(years.length&&titleYears.length&&!years.some(y=>titleYears.includes(y)))return -100;
  const terms=[...new Set(query.toLowerCase().match(/[a-z0-9]{4,}/g)||[])].filter(w=>!ignored.has(w));
  return terms.filter(w=>title.toLowerCase().includes(w)).length;
+}
+
+export function matchEvent(title,query){
+ const normalize=s=>s.toLowerCase().replace(/\bdnc\b/g,'democratic national convention').replace(/[’']s\b/g,'');
+ const ignored=new Set('full speech video watch text transcript address remarks at the in of and to a an president vice delivers national news'.split(' '));
+ const terms=[...new Set(normalize(query).match(/[a-z0-9]+/g)||[])].filter(w=>w.length>2&&!ignored.has(w));
+ const words=new Set(normalize(title).match(/[a-z0-9]+/g)||[]);
+ const years=terms.filter(w=>/^(19|20)\d{2}$/.test(w));
+ const titleYears=[...words].filter(w=>/^(19|20)\d{2}$/.test(w));
+ const matched=terms.filter(w=>words.has(w));
+ const supported=terms.length>=3&&years.length>0&&years.some(y=>words.has(y))&&!titleYears.some(y=>!years.includes(y))&&matched.length/terms.length>=.85;
+ return {supported,matchedTerms:matched,missingTerms:terms.filter(w=>!words.has(w)),reason:supported?'Title agrees with the matched transcript’s event and year; recording identity and completeness remain unchecked.':'Event metadata is insufficient or conflicting.'};
 }

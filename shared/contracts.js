@@ -34,3 +34,8 @@ export function hasRecordingEvidence(candidate){
  if(candidate.linkedFrom&&sufficient(candidate.parentMatchedWords||0,candidate.parentLongestRun||0))return true;
  return candidate.evidenceKind==='archive_link'&&candidate.timedPassages?.some(p=>p.matchedWords>=12);
 }
+
+export function isRecordingLead(candidate){
+ if(candidate.eventRelevance<0||candidate.videoCheck?.status==='different_sample')return false;
+ return hasRecordingEvidence(candidate)||candidate.eventMatch?.supported===true;
+}

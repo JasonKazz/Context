@@ -1,4 +1,4 @@
-import {validateInput,MAX_FILE_BYTES,hasRecordingEvidence} from '/shared/contracts.js';
+import {validateInput,MAX_FILE_BYTES,hasRecordingEvidence,isRecordingLead} from '/shared/contracts.js';
 const $=id=>document.getElementById(id);
 let current=null,pollTimer,clockTimer,requestKey=null,mediaKey=null;
 const labels={candidate:'Source candidates — see evidence levels',inconclusive:'Inconclusive',input_error:'Input / retrieval error'};
@@ -43,7 +43,7 @@ function renderCandidates(result){
  for(const {index,candidate} of ordered.slice(0,1)){
   const card=text('article','','card source-card');
   card.append(text('span','Strongest available text match','source-tag'),text('p',candidate.evidence?.label||'Possible source — recording not checked',`evidence-label ${candidate.evidence?.level||'related'}`));
-  const heading=text('h3','');heading.append(linkTo(candidate.url,candidate.title));card.append(heading,text('p',candidate.evidence?.reason||candidate.support,'hint'));
+  const heading=text('h3','');heading.append(linkTo(candidate.url,candidate.title));card.append(heading,text('p',candidate.eventMatch?.supported?candidate.eventMatch.reason:candidate.evidence?.reason||candidate.support,'hint'));
   const alignment=candidate.alignment;
   if(alignment?.matches.length&&result.extraction?.transcript){
    const details=document.createElement('details');details.open=true;details.append(text('summary',`Compare matched words · ${alignment.matches.length} matching passage${alignment.matches.length===1?'':'s'}`));
@@ -71,9 +71,12 @@ function renderVideos(result){
  if(!result.videoCandidates?.length){$('videos').append(text('p','No additional video candidate is available from this run.','hint'));return;}
  $('videos').append(text('p','Timestamped transcripts can locate likely passages. Eligible YouTube recordings receive a candidate-only speech sample at an indexed timestamp, or the opening if none is available. Full length, visuals and original status remain unverified.','hint'));
  const grid=text('div','','video-grid');const leads=document.createElement('details');leads.append(text('summary','Other search leads · not established as the same recording'));const leadGrid=text('div','','video-grid');leads.append(leadGrid);let supported=0;
- for(const candidate of result.videoCandidates){const card=text('article','','card');card.append(text('span',['archive_link','matched_transcript_link'].includes(candidate.evidenceKind)?'Recording linked by source transcript':!hasRecordingEvidence(candidate)?'Search lead only':'Matching indexed words · video not checked','source-tag'));const title=text('h3','');title.append(linkTo(candidate.url,candidate.title));card.append(title,text('p',candidate.parentMatchedWords>=6?'The source page links this recording and matching transcript evidence. The recording itself has not been verified.':candidate.evidence?.reason||candidate.support,'hint'),linkTo(candidate.url,candidate.recordingPage?'Open transcript / recording page ↗':'Open video ↗'));for(const passage of candidate.timedPassages||[]){card.append(text('p',`Matching indexed passage · ${passage.label} · ${passage.matchedWords} words`,'evidence-label'),text('p',passage.basis,'hint'));const d=document.createElement('details');d.append(text('summary','Read passage'),text('blockquote',passage.text));card.append(d);}
+ for(const candidate of result.videoCandidates){const card=text('article','','card');card.append(text('span',['archive_link','matched_transcript_link'].includes(candidate.evidenceKind)?'Recording linked by source transcript':candidate.eventMatch?.supported&&!hasRecordingEvidence(candidate)?'Likely event recording · passage not checked':!hasRecordingEvidence(candidate)?'Search lead only':'Matching indexed words · video not checked','source-tag'));const title=text('h3','');title.append(linkTo(candidate.url,candidate.title));card.append(title,text('p',candidate.parentMatchedWords>=6?'The source page links this recording and matching transcript evidence. The recording itself has not been verified.':candidate.eventMatch?.supported?candidate.eventMatch.reason:candidate.evidence?.reason||candidate.support,'hint'),linkTo(candidate.url,candidate.publisherVideo?'Watch on publisher website ↗':candidate.recordingPage?'Open transcript / recording page ↗':'Open video ↗'));for(const passage of candidate.timedPassages||[]){card.append(text('p',`Matching indexed passage · ${passage.label} · ${passage.matchedWords} words`,'evidence-label'),text('p',passage.basis,'hint'));const d=document.createElement('details');d.append(text('summary','Read passage'),text('blockquote',passage.text));card.append(d);}
+ for(const metadata of candidate.playerMetadata||[])if(metadata.duration)card.append(text('p',`Publisher-reported duration: ${metadata.duration} · completeness not verified`,'hint'));
+ if(candidate.playerUrl)card.append(linkTo(candidate.playerUrl,'Open embedded recording ↗'));
+ if(candidate.metadataCheck)card.append(text('p',candidate.metadataCheck,'hint'));
  if(candidate.linkedFrom)card.append(linkTo(candidate.linkedFrom,'Linked by this source page'));
- const check=candidate.videoCheck;if(check){card.append(text('p',check.status==='supported_sample'?'Appearance + spoken passage support this sample':check.status==='different_sample'?'Different appearance in the inspected sample':check.status==='speech_sample_match'?'Spoken wording matched in candidate sample · visuals unverified':'Video check inconclusive','evidence-label'),text('p',check.observations,'hint'),text('p',check.scope||'','hint'));}if(hasRecordingEvidence(candidate)){grid.append(card);supported++;}else leadGrid.append(card);}
+ const check=candidate.videoCheck;if(check){card.append(text('p',check.status==='supported_sample'?'Appearance + spoken passage support this sample':check.status==='different_sample'?'Different appearance in the inspected sample':check.status==='speech_sample_match'?'Spoken wording matched in candidate sample · visuals unverified':'Video check inconclusive','evidence-label'),text('p',check.observations,'hint'),text('p',check.scope||'','hint'));}if(isRecordingLead(candidate)){grid.append(card);supported++;}else leadGrid.append(card);}
  if(!supported)$('videos').append(text('p','No recording passage was established. The remaining links are search leads, not confirmed sources.','notice'));$('videos').append(grid,leads);
 }
 function renderAssessment(result){
@@ -123,9 +126,9 @@ function mediaPanel(label,url,title,note){
 }
 function renderOverview(job){
  const r=job.result;let input={};try{input=JSON.parse(sessionStorage.getItem(`context-input-${job.id}`)||'{}');}catch{}
- const lead=(r.videoCandidates||[]).find(hasRecordingEvidence);
+ const lead=(r.videoCandidates||[]).find(isRecordingLead);
  const nextMediaKey=JSON.stringify([job.id,input.url,input.filename,lead?.url]);
- if(nextMediaKey!==mediaKey){mediaKey=nextMediaKey;$('media-comparison').replaceChildren(mediaPanel('Submitted excerpt',input.url||'',input.filename||'Your submitted clip',input.url?'Open the public post to watch this excerpt.':'Media is not stored for playback after analysis.'),mediaPanel('Source lead · not verified',lead?.url||'',lead?.title||'Still looking for the recording',lead?'Supporting text or source-page links point to this recording; the video itself is not verified.':'A matching article does not establish a matching video. No recording has enough supporting evidence from this run.'));}
+ if(nextMediaKey!==mediaKey){mediaKey=nextMediaKey;$('media-comparison').replaceChildren(mediaPanel('Submitted excerpt',input.url||'',input.filename||'Your submitted clip',input.url?'Open the public post to watch this excerpt.':'Media is not stored for playback after analysis.'),mediaPanel('Source lead · not verified',lead?.url||'',lead?.title||'Still looking for the recording',lead?lead.eventMatch?.supported&&!hasRecordingEvidence(lead)?lead.eventMatch.reason:'Supporting text or source-page links point to this recording; the video itself is not verified.':'A matching article does not establish a matching video. No recording has enough supporting evidence from this run.'));}
  const strongest=[...(r.candidates||[])].sort((a,b)=>(b.alignment?.matchedWords||0)-(a.alignment?.matchedWords||0))[0];
  const a=strongest?.alignment,m=r.metrics||{};
  const elapsed=job.elapsedMs??m.elapsedMs;
