@@ -15,9 +15,23 @@ Node 22.13+ (tested on Node 26). `ffmpeg` is needed only for uploaded media. No 
 ## Supported discovery routes
 
 - Public YouTube URL: ask Gemini for discovery clues from a up-to-180-second segment, then search Exa.
+- Public Instagram Reel/post, TikTok video/share link, X/Twitter status: experimental direct retrieval with the optional setup below. Five-second retrieval deadline, 8 MB maximum, no login/browser cookies. Known durations over three minutes and unsupported streaming formats fail promptly. Unknown durations remain bounded by bytes and analysis coverage.
 - Other public URL: retrieve accessible indexed page text with Exa; extract clues, then search. **This does not mean the video itself was watched.** Blocked/private/unindexed links may fail.
 - Upload MP4/WebM/MP3/M4A/WAV up to 8 MB: process up to 180 seconds; video includes sampled visual frames, audio-only files are decoded locally. Then Gemini and Exa.
 - Optional spoken quote (also works alone): search using user-supplied words; no claim of independent transcription.
+
+## Optional social-video setup
+
+The current Mac has this installed. On another machine, install Python 3.12, then:
+
+```sh
+python3.12 -m venv work/social-venv
+work/social-venv/bin/python -m pip install -r backend/requirements-social.txt
+```
+
+Restart the backend. `SOCIAL_PYTHON` optionally overrides the interpreter path. The helper uses free [yt-dlp](https://github.com/yt-dlp/yt-dlp); Gemini/Exa analysis still uses existing credits. Public-site support can break or require login; this app will not import account cookies or solve challenges. Ordinary anonymous cookies issued during public retrieval stay in process memory. Silent videos are marked visual-only, never supplied with an invented transcript.
+
+Measured support: the user's TikTok share link retrieved and completed the real-provider pipeline. An Instagram silent-video fixture retrieved successfully; Instagram speech/discovery accuracy remains untested. The X fixture failed on both default and public syndication routes, so X remains experimental with an upload fallback. See `docs/social-retrieval-results.md`.
 
 ## Honest scope
 
@@ -49,6 +63,6 @@ POST `/api/jobs` with JSON `{url, quote?, startSeconds?}` and `Idempotency-Key`;
 
 SQLite lives in ignored `work/` and stores reports for up to 24 hours (purged on new submissions), maximum 200 jobs. Pending jobs are marked interrupted after a restart and never automatically reprocessed. Media is temporary and cleaned after audio extraction. Cancellation stops local requests/processes where possible; external providers may continue processing accepted requests or bill them.
 
-Localhost demo only: no authentication or public deployment is configured. The server restricts Host and Origin, rejects local/private input destinations and credential-bearing URLs, delegates URL retrieval to providers (no arbitrary server-side media fetch), and renders all text safely. Provider retrieval redirects are controlled by those providers, not this application. Logs contain stage timing/error codes, never raw URLs or provider responses.
+Localhost demo only: no authentication or public deployment is configured. The server restricts Host and Origin, rejects local/private input destinations and credential-bearing URLs, uses provider retrieval for general URLs and allowlisted social extractors for bounded MP4 downloads, and renders all text safely. Provider retrieval redirects are controlled by those providers. Local social retrieval disables proxies and external processes, and checks actual connection IPs/ports to block private-network destinations including redirects. Temporary video files are deleted before analysis proceeds. Logs contain stage timing/error codes, never raw URLs or provider responses.
 
 Work on main. Old HackNCQuantro and existing deployments remain untouched.

@@ -115,5 +115,6 @@ export async function analyze(input,{signal,onUpdate=()=>{},deadline=Date.now()+
   const detail=publicError(error);result.warnings.push(detail.message);
   if(!result.candidates.length) {result.status=['SOCIAL_UNSUPPORTED','SOCIAL_UNAVAILABLE','SOCIAL_TIMEOUT','SOCIAL_SETUP','UNSAFE_URL','UNAVAILABLE_URL','RETRIEVAL_UNAVAILABLE','MEDIA_PROCESSING','NO_AUDIO','NO_CLUES','EXA_KEY_MISSING','GEMINI_KEY_MISSING'].includes(detail.code)?'input_error':'inconclusive';result.summary=detail.message;}
  }
+ if(result.status==='candidate'&&result.extraction?.transcript&&!result.candidates.some(c=>c.alignment?.matches.length)&&!result.videoCandidates.some(c=>c.videoCheck?.status==='supported_sample')){result.status='inconclusive';result.summary='No matching source passage was found for the available transcript or quote. Related search leads below remain unconfirmed.';}
  return snapshot();
 }

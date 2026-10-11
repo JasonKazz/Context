@@ -33,6 +33,8 @@ class Quiet:
 
 
 def choose_format(info):
+    if info.get('_type') in ('playlist', 'multi_video'):
+        raise ValueError('MULTIPLE_VIDEOS')
     if info.get('is_live') or info.get('duration', 0) and info['duration'] > 180:
         raise ValueError('TOO_LONG')
     available = info.get('formats', [info])
@@ -69,11 +71,6 @@ def run():
         for cls in (InstagramIE, TikTokIE, TikTokVMIE, TwitterIE):
             ydl.add_info_extractor(cls())
         info = ydl.extract_info(request['url'], download=False)
-    if info.get('_type') == 'playlist':
-        entries = list(info.get('entries') or [])
-        if len(entries) != 1 or not entries[0]:
-            raise ValueError('UNAVAILABLE')
-        info = entries[0]
     fmt = choose_format(info)
     headers = {k: v for k, v in fmt.get('http_headers', info.get('http_headers', {})).items()
                if k.lower() in ('user-agent', 'referer', 'accept', 'accept-language')}
@@ -100,7 +97,7 @@ if __name__ == '__main__':
     try:
         run()
     except Exception as error:
-        code = str(error) if str(error) in ('TOO_LONG', 'TOO_LARGE', 'NO_SMALL_MP4') else 'UNAVAILABLE'
+        code = str(error) if str(error) in ('TOO_LONG', 'TOO_LARGE', 'NO_SMALL_MP4', 'MULTIPLE_VIDEOS') else 'UNAVAILABLE'
         hints = [label for label in ('Unsupported URL', '403', '429', 'certificate', 'blocked connection', 'external processes', 'Unable to extract', 'impersonat', 'login', 'timed out', 'sw_vers', 'uname', 'ffmpeg', 'ffprobe') if label.lower() in str(error).lower()]
         print(json.dumps({'ok': False, 'code': code, 'diagnostic': type(error).__name__, 'hints': hints}))  # Never expose upstream errors or signed URLs.
         sys.exit(1)

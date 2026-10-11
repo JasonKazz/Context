@@ -59,3 +59,8 @@ test('spoken query skips a generic salutation without inventing words',async()=>
  const input={basis:'youtube_segment',transcript:'Mayor, guests, ladies and gentlemen, our new telescope will measure the distant atmosphere next spring.',queries:['Mayor guests','telescope'],description:'A science presentation.'};
  const queries=discoveryQueries(input);assert.ok(queries[0].includes('our new telescope'));assert.ok(!queries[0].includes('Mayor'));assert.equal(queries.length,2);
 });
+
+test('related pages without transcript alignment remain inconclusive',async()=>{
+ const result=await analyze({url:'',quote:'the distinctive solar energy proposal includes free panels for every local library'},{providers:{exa:{search:async()=>[{url:'https://example.com/related',title:'Solar energy proposal',text:'A solar energy proposal considers panels and another library. This is unrelated wording.'}]},gemini:{summarize:async()=>({summary:'Related pages',context:[]})}}});
+ assert.equal(result.status,'inconclusive');assert.ok(result.candidates.every(c=>!c.alignment.matches.length));
+});

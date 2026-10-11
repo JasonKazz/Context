@@ -37,7 +37,7 @@ export async function retrieveSocial(raw,ctx,{python=config.socialPython,script=
    });
    child.stdin.end(JSON.stringify({url:post.url,output}));
   });
-  if(!result.ok){const explanation={TOO_LONG:'The video exceeds the three-minute retrieval limit.',TOO_LARGE:'The video exceeds the 8 MB retrieval limit.',NO_SMALL_MP4:'No small, directly downloadable MP4 was available.'}[result.code]||'The post is unavailable, blocked, private, or requires login.';throw new AppError('SOCIAL_UNAVAILABLE',`${post.platform}: ${explanation} Upload a short clip or paste its spoken words.`,422);}
+  if(!result.ok){const explanation={MULTIPLE_VIDEOS:'This post contains a collection rather than one video.',TOO_LONG:'The video exceeds the three-minute retrieval limit.',TOO_LARGE:'The video exceeds the 8 MB retrieval limit.',NO_SMALL_MP4:'No small, directly downloadable MP4 was available.'}[result.code]||'The post is unavailable, blocked, private, or requires login.';throw new AppError('SOCIAL_UNAVAILABLE',`${post.platform}: ${explanation} Upload a short clip or paste its spoken words.`,422);}
   const bytes=await readFile(output);if(bytes.length>8*1024*1024)throw new AppError('SOCIAL_UNAVAILABLE','The video exceeds 8 MB. Upload a smaller clip.',422);
   return {part:{inlineData:{mimeType:'video/mp4',data:bytes.toString('base64')},videoMetadata:{startOffset:'0s',endOffset:'180s',fps:0.5}},platform:post.platform,duration:result.duration,audioAvailable:result.audioAvailable};
  }finally{await rm(directory,{recursive:true,force:true});}

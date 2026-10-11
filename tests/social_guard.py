@@ -17,7 +17,7 @@ class SocialGuard(unittest.TestCase):
         silent = {**good, 'acodec':'none'}
         self.assertEqual(social.choose_format({'formats':[silent]}),silent)
         with self.assertRaises(ValueError): social.choose_format({'formats':[silent, {**good, 'ext':'m4a', 'vcodec':'none'}]})
-        for info in ({'duration':181,'formats':[good]}, {'is_live':True,'formats':[good]}, {'formats':[{**good,'filesize':social.MAX_BYTES+1}]}, {'formats':[{**good,'protocol':'m3u8_native'}]}, {'formats':[{**good,'url':'file:///etc/passwd'}]}):
+        for info in ({'_type':'playlist','formats':[good]}, {'duration':181,'formats':[good]}, {'is_live':True,'formats':[good]}, {'formats':[{**good,'filesize':social.MAX_BYTES+1}]}, {'formats':[{**good,'protocol':'m3u8_native'}]}, {'formats':[{**good,'url':'file:///etc/passwd'}]}):
             with self.assertRaises(ValueError): social.choose_format(info)
     def test_external_processes_blocked(self):
         with self.assertRaises(ValueError): social.network_audit('subprocess.Popen', ('ffmpeg',))
