@@ -1,11 +1,11 @@
 import {validateInput,MAX_FILE_BYTES} from '/shared/contracts.js';
 const $=id=>document.getElementById(id);
-let current=null,pollTimer,clockTimer,requestKey=null;
+let current=null,pollTimer,clockTimer,requestKey=null,mediaKey=null;
 const labels={candidate:'Source candidates — see evidence levels',inconclusive:'Inconclusive',input_error:'Input / retrieval error'};
 function text(tag,value,className){const node=document.createElement(tag);node.textContent=value;if(className)node.className=className;return node;}
 function clearTimers(){clearTimeout(pollTimer);clearInterval(clockTimer);}
 function render(job){
- current=job;$('progress').hidden=false;$('stage').textContent=job.stage;
+ current=job;document.body.classList.add('report-view');$('progress').hidden=job.state!=='running';$('stage').textContent=job.stage;
  const updateClock=()=>{const seconds=(job.elapsedMs??(Date.now()-job.createdAt))/1000;$('elapsed').textContent=`${seconds.toFixed(1)}s server`;$('bar').value=Math.min(seconds,17);};
  updateClock();clearInterval(clockTimer);if(job.state==='running')clockTimer=setInterval(updateClock,100);
  $('submit').disabled=job.state==='running';$('cancel').hidden=job.state!=='running';
@@ -14,6 +14,7 @@ function render(job){
  $('report').hidden=false;$('outcome').textContent=labels[result.status]||'Inconclusive';$('summary').textContent=result.summary;
  $('extraction').replaceChildren();
  if(result.extraction){const details=document.createElement('details');details.className='card';details.append(text('summary',`Discovery clues · ${result.extraction.basis.replaceAll('_',' ')}`),text('p',result.extraction.description||''),text('p',result.extraction.clipStructure||''),text('p',result.extraction.coverage||'','hint'),text('p',result.extraction.visualClues||'','hint'));if(result.extraction.transcript)details.append(text('blockquote',result.extraction.transcript));details.append(text('p',`Search queries: ${(result.extraction.queries||[]).join(' / ')}`,'hint'));$('extraction').append(details);}
+ renderOverview(job);
  renderCandidates(result);
  renderVideos(result);
  renderAssessment(result);
@@ -90,7 +91,7 @@ $('form').addEventListener('submit',async event=>{
   if(file){if(file.size>MAX_FILE_BYTES)throw new Error('Choose a clip smaller than 8 MB.');input.media={data:await fileData(file),mimeType:file.type||({mp3:'audio/mpeg',m4a:'audio/mp4',wav:'audio/wav',mp4:'video/mp4',webm:'video/webm'}[file.name.split('.').pop().toLowerCase()])};}
   const valid=validateInput(input);requestKey=crypto.randomUUID();sessionStorage.setItem('quantro-request',requestKey);
   const res=await fetch('/api/jobs',{method:'POST',headers:{'Content-Type':'application/json','Idempotency-Key':requestKey},body:JSON.stringify(valid),signal:AbortSignal.timeout(15000)});const job=await res.json();if(!res.ok)throw new Error(job.message);
-  sessionStorage.setItem('quantro-job',job.id);render(job);await poll(job.id);
+  sessionStorage.setItem('quantro-job',job.id);sessionStorage.setItem(`context-input-${job.id}`,JSON.stringify({url:valid.url,filename:file?.name||''}));render(job);window.scrollTo({top:0,behavior:'smooth'});await poll(job.id);
  }catch(error){$('error').textContent=error.message||'Submission failed.';$('submit').disabled=false;}
 });
 $('cancel').addEventListener('click',async()=>{if(!current)return;try{const res=await fetch(`/api/jobs/${current.id}`,{method:'DELETE'});render(await res.json());clearTimers();}catch{$('error').textContent='Could not send cancellation. The server deadline still applies.';}});
@@ -98,3 +99,30 @@ $('download').addEventListener('click',()=>{if(!current)return;const href=URL.cr
 try{const res=await fetch('/api/health');const health=await res.json();const missing=Object.entries(health.providers).filter(([,ready])=>!ready).map(([name])=>name);$('health').textContent=missing.length?`Setup needed: ${missing.join(', ')} API key(s). Save the root .env and restart the server.`:'Gemini and Exa configured · First-pass discovery, with evidence and uncertainty.';}catch{$('health').textContent='Backend unavailable. Start the local server and refresh.';}
 const saved=sessionStorage.getItem('quantro-job');const pending=sessionStorage.getItem('quantro-request');
 if(pending){try{const res=await fetch(`/api/submissions/${pending}`);if(res.ok){const job=await res.json();sessionStorage.setItem('quantro-job',job.id);poll(job.id);}else if(saved)poll(saved);}catch{if(saved)poll(saved);}}else if(saved)poll(saved);
+
+function showHome(){document.body.classList.remove('report-view');window.scrollTo({top:0,behavior:'smooth'});}
+$('back').addEventListener('click',showHome);
+$('home').addEventListener('click',event=>{event.preventDefault();showHome();});
+for(const link of document.querySelectorAll('[data-home]'))link.addEventListener('click',()=>document.body.classList.remove('report-view'));
+$('demo').addEventListener('click',()=>{
+ if(current?.state==='running')return;
+ showHome();$('url').value='https://www.youtube.com/watch?v=AMWqyG5ocW8';$('quote').value='';$('start').value='0';$('file').value='';$('demo-note').hidden=false;
+ $('form').requestSubmit();
+});
+function youtubeId(value){try{const u=new URL(value);if(u.hostname==='youtu.be')return /^[\w-]{11}$/.test(u.pathname.slice(1))?u.pathname.slice(1):null;if(!['youtube.com','www.youtube.com','m.youtube.com'].includes(u.hostname))return null;const id=u.searchParams.get('v')||u.pathname.match(/^\/(?:shorts|embed)\/([\w-]{11})/)?.[1];return /^[\w-]{11}$/.test(id||'')?id:null;}catch{return null;}}
+function mediaPanel(label,url,title,note){
+ const panel=text('article','','media-panel');panel.append(text('p',label));const id=youtubeId(url);
+ if(id){const preview=text('button','','video-preview');preview.type='button';preview.append(text('span','▶','play-symbol'),text('strong',title),text('span','Load YouTube player','hint'));preview.addEventListener('click',()=>{const frame=document.createElement('iframe');frame.title=label;frame.src=`https://www.youtube-nocookie.com/embed/${id}`;frame.referrerPolicy='strict-origin-when-cross-origin';frame.allowFullscreen=true;preview.replaceWith(frame);});panel.append(preview);}
+ else{const box=text('div','','media-placeholder');box.append(text('span','CONTEXT / EVIDENCE','eyebrow'),text('h3',title),text('p',note,'hint'));panel.append(box);}
+ if(url)panel.append(linkTo(url,'Open source ↗'));return panel;
+}
+function renderOverview(job){
+ const r=job.result;let input={};try{input=JSON.parse(sessionStorage.getItem(`context-input-${job.id}`)||'{}');}catch{}
+ const lead=(r.videoCandidates||[]).find(c=>c.timedPassages?.length||c.alignment?.matchedWords>=6);
+ const nextMediaKey=JSON.stringify([job.id,input.url,input.filename,lead?.url]);
+ if(nextMediaKey!==mediaKey){mediaKey=nextMediaKey;$('media-comparison').replaceChildren(mediaPanel('Submitted excerpt',input.url||'',input.filename||'Your submitted clip',input.url?'Open the public post to watch this excerpt.':'Media is not stored for playback after analysis.'),mediaPanel('Source lead · not verified',lead?.url||'',lead?.title||'Still looking for the recording',lead?.recordingPage?'A timestamped transcript was found. Open its page to explore the recording.':'No recording with supporting passage evidence is available from this run.'));}
+ const strongest=[...(r.candidates||[])].sort((a,b)=>(b.alignment?.matchedWords||0)-(a.alignment?.matchedWords||0))[0];
+ const a=strongest?.alignment;const times=(r.videoCandidates||[]).reduce((n,c)=>n+(c.timedPassages?.length||0),0);
+ const stats=[['Text alignment',a?`${a.matchedWords} / ${a.clipWords}`:'—','Words aligned in the strongest text source; not confidence.'],['Passage locations',String(times),'Indexed timestamp cues, not verified video timings.'],['Source leads',String(r.videoCandidates?.length||0),'Recording and transcript candidates from public search.'],['Server time',`${((job.elapsedMs||r.metrics?.elapsedMs||0)/1000).toFixed(1)}s`,'Upload, network and rendering time are additional.']];
+ $('evidence-stats').replaceChildren(...stats.map(([label,value,note])=>{const card=text('div','','stat');card.append(text('span',label,'stat-label'),text('span',value,'stat-value'),text('p',note));return card;}));
+}

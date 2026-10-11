@@ -21,7 +21,7 @@ async function body(req){
 }
 const server=createServer(async(req,res)=>{
  res.setHeader('X-Content-Type-Options','nosniff');res.setHeader('Referrer-Policy','no-referrer');
- res.setHeader('Content-Security-Policy',"default-src 'self'; frame-ancestors 'none'; object-src 'none'; base-uri 'none'");
+ res.setHeader('Content-Security-Policy',"default-src 'self'; frame-src https://www.youtube-nocookie.com; frame-ancestors 'none'; object-src 'none'; base-uri 'none'");
  try {
   // Local demo: block cross-origin requests and DNS-rebinding hostnames.
   const host=String(req.headers.host||'');
