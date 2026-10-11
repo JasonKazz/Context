@@ -4,6 +4,7 @@ import {publicUrl,youtubeUrl} from '../retrieval.js';
 import * as exa from '../providers/exa.js';
 import * as gemini from '../providers/gemini.js';
 import {audioPart} from '../media.js';
+import {socialUrl,retrieveSocial} from '../providers/social.js';
 import {rank} from './ranking.js';
 import {discoveryQueries} from './queries.js';
 import {addAlignment} from './alignment.js';
@@ -22,7 +23,7 @@ export async function analyze(input,{signal,onUpdate=()=>{},deadline=Date.now()+
   try{return await work({signal:stageSignal,metrics});}catch(error){outcome=publicError(error).code;throw error;}finally{const timing={stage:name,elapsedMs:Date.now()-begin,outcome};metrics.stages.push(timing);console.log(JSON.stringify({event:'stage',...timing}));}
  }
  try {
-  let url=input.url,parts=[],metadata;
+  let url=input.url,parts=[],metadata,social;
   if(url) url=await stage('Checking public link',1200,ctx=>publicUrl(url,ctx.signal));
   if(input.quote) {
    result.extraction={transcript:input.quote,queries:input.quote.split(/(?<=[.!?])\s+/).filter(x=>x.length>12).slice(0,2).map(x=>x.slice(0,180)),description:'User-supplied spoken quote; not independently transcribed.',basis:'user_quote'};
@@ -35,6 +36,9 @@ export async function analyze(input,{signal,onUpdate=()=>{},deadline=Date.now()+
    } else if(yt) {
     parts=[{fileData:{fileUri:yt},videoMetadata:{startOffset:`${input.startSeconds}s`,endOffset:`${input.startSeconds+180}s`,fps:0.5}}];
     result.warnings.push(`Requested the complete clip if it ends within 180 seconds of ${input.startSeconds}s; otherwise coverage is partial. Speech and visual observations are model-derived, not frame-by-frame verification.`);
+   } else if(socialUrl(url)){
+    social=await stage('Retrieving public social video',5000,ctx=>(providers.social?.retrieve||retrieveSocial)(url,ctx));
+    parts=[social.part];if(social.audioAvailable===false){parts.push({text:'This retrieved video is reported to have no audio. Return an empty transcript and use visible clues only.'});result.warnings.push('The retrieved video has no reported audio track. Discovery uses visual clues, not transcribed speech.');}result.warnings.push(`${social.platform} video retrieved directly. Up to 180 seconds inspected; sampled frames and transcription remain model-derived.`);
    } else {
     metadata=await stage('Retrieving indexed page text',3000,ctx=>providers.exa.contents(url,ctx));
     parts=[{text:JSON.stringify({title:metadata.title,text:metadata.text})}];
@@ -43,7 +47,7 @@ export async function analyze(input,{signal,onUpdate=()=>{},deadline=Date.now()+
    try {
     const extraction=await stage('Extracting discovery clues',yt?7000:5000,ctx=>providers.gemini.extract(parts,ctx));
     if(!extraction.queries.length) throw new AppError('NO_CLUES','No usable speech or identifying text was extracted. Upload a short clip or paste its words.',422);
-    result.extraction={...extraction,coverage:metadata?'Indexed page only':`Up to 180 seconds from ${input.startSeconds||0}s; model-reported ending: ${extraction.reachedEnd===true?'reached': 'not established'}`,transcript:metadata?'':extraction.transcript,basis:metadata?'indexed_page':input.media?'uploaded_audio':'youtube_segment'};
+    result.extraction={...extraction,coverage:metadata?'Indexed page only':`Up to 180 seconds from ${yt?(input.startSeconds||0):0}s; model-reported ending: ${extraction.reachedEnd===true?'reached': 'not established'}`,transcript:metadata||social?.audioAvailable===false?'':extraction.transcript,basis:metadata?'indexed_page':social?'social_video':input.media?(input.media.mimeType.startsWith('video/')?'uploaded_video':'uploaded_audio'):'youtube_segment'};
    } catch(error) {
     if(signal?.aborted) throw error;
     result.warnings.push(publicError(error).message);
@@ -109,7 +113,7 @@ export async function analyze(input,{signal,onUpdate=()=>{},deadline=Date.now()+
   } else result.warnings.push('The deadline left no time for a model-written summary; source evidence is available.');
  } catch(error) {
   const detail=publicError(error);result.warnings.push(detail.message);
-  if(!result.candidates.length) {result.status=['UNSAFE_URL','UNAVAILABLE_URL','RETRIEVAL_UNAVAILABLE','MEDIA_PROCESSING','NO_AUDIO','NO_CLUES','EXA_KEY_MISSING','GEMINI_KEY_MISSING'].includes(detail.code)?'input_error':'inconclusive';result.summary=detail.message;}
+  if(!result.candidates.length) {result.status=['SOCIAL_UNSUPPORTED','SOCIAL_UNAVAILABLE','SOCIAL_TIMEOUT','SOCIAL_SETUP','UNSAFE_URL','UNAVAILABLE_URL','RETRIEVAL_UNAVAILABLE','MEDIA_PROCESSING','NO_AUDIO','NO_CLUES','EXA_KEY_MISSING','GEMINI_KEY_MISSING'].includes(detail.code)?'input_error':'inconclusive';result.summary=detail.message;}
  }
  return snapshot();
 }

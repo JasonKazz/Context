@@ -22,3 +22,7 @@ benchmark/results/
 benchmark/inputs/
 benchmark/references/*
 !benchmark/references/README.md
+
+# Python retrieval helper
+__pycache__/
+*.py[cod]

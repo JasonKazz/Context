@@ -6,7 +6,7 @@
 <div id="health" class="notice" role="status">Checking provider setup…</div>
 <form id="form" class="card">
 <label for="url">Video or page link</label><input id="url" type="url" placeholder="https://…" autocomplete="off">
-<p class="hint">Public YouTube segments can be inspected directly. Other links use publicly indexed page text; some platforms block access.</p>
+<p class="hint">YouTube plus experimental public Instagram, TikTok and X video retrieval. Social retrieval is limited to 8 MB; up to three minutes are analyzed. Blocked or login-only posts require an upload. Other links use indexed page text.</p>
 <div class="row"><div><label for="start">YouTube start time (seconds)</label><input id="start" type="number" min="0" max="86400" value="0"></div><div><label for="file">Or upload a short clip</label><input id="file" type="file" accept=".mp4,.webm,.mp3,.wav,.m4a"><p class="hint">Up to 8 MB. Up to three minutes; video frames are sampled. Longer files receive partial coverage.</p></div></div>
 <label for="quote">Spoken quote <span class="optional">— optional, useful when a link is blocked</span></label><textarea id="quote" rows="3" maxlength="4000" placeholder="Paste the actual words spoken in the clip…"></textarea>
 <p class="hint">A supplied quote takes priority over automatic transcription. Public link/text/audio is sent to Gemini and/or Exa for processing. Do not submit private content.</p>

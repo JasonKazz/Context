@@ -1,0 +1,2 @@
+# Optional local public-post retrieval. No credentials or browser cookies.
+yt-dlp==2026.8.19

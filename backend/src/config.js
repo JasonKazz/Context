@@ -15,5 +15,6 @@ export const config = Object.freeze({
  geminiApiKey: process.env.GEMINI_API_KEY || '', exaApiKey: process.env.EXA_API_KEY || '',
  geminiModel: process.env.GEMINI_MODEL || 'gemini-3.5-flash-lite',
  ffmpeg: process.env.FFMPEG_PATH || 'ffmpeg',
+ socialPython: process.env.SOCIAL_PYTHON || resolve(root,'work/social-venv/bin/python'),
  dataDir: resolve(root, 'work'),
 });
