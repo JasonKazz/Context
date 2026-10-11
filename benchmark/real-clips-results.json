@@ -1,0 +1,667 @@
+{
+  "scope": "Seven CLI real-provider runs, four distinct URLs. Three newly selected YouTube URLs, one previously tested TikTok. Not representative; no browser end-to-end timing. Cold is first local trial, upstream caching unknown. No human quote or reference answer supplied to discovery. Media bounded to 180 seconds; Obama and TikTok end not established.",
+  "findings": [
+    "Jobs full Stanford upload UF8uR6Z6KLc in top-three general sources both runs; absent from dedicated video list cold, position 2 warm.",
+    "Obama plausible complete C-SPAN recording NM6d06ALBVA top video both runs; authoritative event reference exists, exact audiovisual passage not independently verified.",
+    "Stock-footage Jobs short inaccessible both runs; cause of provider 403 undetermined.",
+    "TikTok no matching passage; unrelated videos suggested.",
+    "One Obama repeat sample supported label is not accepted as verification: inspected opening does not establish the later anger-translator passage; requires independent check.",
+    "Contradictory visual enum and explanation on unrelated TikTok candidate.",
+    "Zero independently verified recording matches. No overall deadline exits; one fallback stage timeout.",
+    "Estimated/reported usage total $0.1912545; failed call billing may be omitted."
+  ],
+  "runs": [
+    {
+      "label": "jobs-excerpt",
+      "runType": "cold",
+      "elapsedMs": 7941,
+      "status": "candidate",
+      "basis": "youtube_segment",
+      "coverage": "Up to 180 seconds from 0s; model-reported ending: reached",
+      "metrics": {
+        "calls": {
+          "exa": 5,
+          "gemini": 5
+        },
+        "inputTokens": 22012,
+        "outputTokens": 964,
+        "estimatedCostUsd": 0.009013599999999998,
+        "exaReportedCostUsd": 0.029,
+        "costNotes": [
+          "Gemini 3.5 Flash-Lite estimate: $0.30/M input and $2.50/M output including thinking; free credits may apply. Failed or cancelled requests may still incur unreported costs."
+        ],
+        "stages": [
+          {
+            "stage": "Checking public link",
+            "elapsedMs": 241,
+            "outcome": "ok"
+          },
+          {
+            "stage": "Extracting discovery clues",
+            "elapsedMs": 2569,
+            "outcome": "ok"
+          },
+          {
+            "stage": "Searching public indexes",
+            "elapsedMs": 595,
+            "outcome": "ok"
+          },
+          {
+            "stage": "Locating surrounding text and video candidates",
+            "elapsedMs": 668,
+            "outcome": "ok"
+          },
+          {
+            "stage": "Checking candidate video appearance and speech",
+            "elapsedMs": 2981,
+            "outcome": "ok"
+          },
+          {
+            "stage": "Writing evidence-based report",
+            "elapsedMs": 834,
+            "outcome": "ok"
+          }
+        ],
+        "elapsedMs": 7941
+      },
+      "warnings": [
+        "Requested the complete clip if it ends within 180 seconds of 0s; otherwise coverage is partial. Speech and visual observations are model-derived, not frame-by-frame verification."
+      ],
+      "sources": [
+        {
+          "title": "\u2018You\u2019ve got to find what you love,\u2019 Jobs says | Stanford Report",
+          "url": "https://news.stanford.edu/stories/2005/06/youve-got-find-love-jobs-says"
+        },
+        {
+          "title": "Steve Jobs - Commencement Address at Stanford University (as delivered)",
+          "url": "https://www.americanrhetoric.com/speeches/stevejobsstanfordcommencement.htm"
+        },
+        {
+          "title": "Steve Jobs' 2005 Stanford Commencement Address",
+          "url": "https://www.youtube.com/watch?v=UF8uR6Z6KLc"
+        }
+      ],
+      "videos": [
+        {
+          "title": "Learn English with Steve Jobs' speech || Stay Hungry, Stay Foolish",
+          "url": "https://www.youtube.com/watch?v=HFl48f4F0Pw",
+          "indexedMatchedWords": 103,
+          "sampleCheck": {
+            "visual": "consistent",
+            "observations": "The candidate video features Steve Jobs giving his 2005 Stanford Commencement Address. The candidate video matches the reference person (Steve Jobs in academic regalia at a podium) and context, although the candidate video has a different intro, lower thirds, and layout.",
+            "scope": "First 90 seconds, sampled at 0.5 frames/second. Model comparison, not independent recording verification.",
+            "matchedWords": 0,
+            "clipWords": 104,
+            "status": "inconclusive"
+          }
+        },
+        {
+          "title": "Steve Jobs Connect the Dots",
+          "url": "https://www.youtube.com/watch?v=5BSbOc5VYY8",
+          "indexedMatchedWords": 103,
+          "sampleCheck": {
+            "visual": "consistent",
+            "observations": "The candidate video shows Steve Jobs speaking at a commencement podium wearing graduation robes, which matches the visual context and theme of the reference video.",
+            "scope": "First 90 seconds, sampled at 0.5 frames/second. Model comparison, not independent recording verification.",
+            "matchedWords": 0,
+            "clipWords": 104,
+            "status": "inconclusive"
+          }
+        },
+        {
+          "title": "ENGLISH SPEECH | STEVE JOBS: Stanford Speech (English Subtitles)",
+          "url": "https://www.youtube.com/watch?v=1i9kcBHX2Nw",
+          "indexedMatchedWords": 65,
+          "sampleCheck": null
+        },
+        {
+          "title": "Brad Burnham Keynote Speech at Booth on Vimeo",
+          "url": "https://vimeo.com/36286008",
+          "indexedMatchedWords": 0,
+          "sampleCheck": null
+        },
+        {
+          "title": "University of California, Berkeley, Commencement Address | C-SPAN.org",
+          "url": "https://www.c-span.org/program/public-affairs-event/university-of-california-berkeley-commencement-address/311314",
+          "indexedMatchedWords": 0,
+          "sampleCheck": null
+        }
+      ]
+    },
+    {
+      "label": "jobs-stock-footage-short",
+      "runType": "cold",
+      "elapsedMs": 2951,
+      "status": "inconclusive",
+      "basis": null,
+      "coverage": null,
+      "metrics": {
+        "calls": {
+          "exa": 1,
+          "gemini": 1
+        },
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "estimatedCostUsd": 0,
+        "exaReportedCostUsd": 0,
+        "costNotes": [],
+        "stages": [
+          {
+            "stage": "Checking public link",
+            "elapsedMs": 2,
+            "outcome": "ok"
+          },
+          {
+            "stage": "Extracting discovery clues",
+            "elapsedMs": 946,
+            "outcome": "PROVIDER_403"
+          },
+          {
+            "stage": "Trying indexed text fallback",
+            "elapsedMs": 2002,
+            "outcome": "TIMEOUT"
+          }
+        ],
+        "elapsedMs": 2951
+      },
+      "warnings": [
+        "Requested the complete clip if it ends within 180 seconds of 0s; otherwise coverage is partial. Speech and visual observations are model-derived, not frame-by-frame verification.",
+        "Gemini denied access to this request. The video may be private/unavailable, or account permissions may restrict it.",
+        "This step exceeded its time budget. Try a shorter clip or paste a distinctive spoken quote."
+      ],
+      "sources": [],
+      "videos": []
+    },
+    {
+      "label": "obama-anger-translator-excerpt",
+      "runType": "cold",
+      "elapsedMs": 11598,
+      "status": "candidate",
+      "basis": "youtube_segment",
+      "coverage": "Up to 180 seconds from 0s; model-reported ending: not established",
+      "metrics": {
+        "calls": {
+          "exa": 5,
+          "gemini": 4
+        },
+        "inputTokens": 28824,
+        "outputTokens": 1013,
+        "estimatedCostUsd": 0.0111797,
+        "exaReportedCostUsd": 0.029,
+        "costNotes": [
+          "Gemini 3.5 Flash-Lite estimate: $0.30/M input and $2.50/M output including thinking; free credits may apply. Failed or cancelled requests may still incur unreported costs."
+        ],
+        "stages": [
+          {
+            "stage": "Checking public link",
+            "elapsedMs": 3,
+            "outcome": "ok"
+          },
+          {
+            "stage": "Extracting discovery clues",
+            "elapsedMs": 4622,
+            "outcome": "ok"
+          },
+          {
+            "stage": "Searching public indexes",
+            "elapsedMs": 821,
+            "outcome": "ok"
+          },
+          {
+            "stage": "Locating surrounding text and video candidates",
+            "elapsedMs": 1162,
+            "outcome": "ok"
+          },
+          {
+            "stage": "Checking candidate video appearance and speech",
+            "elapsedMs": 3652,
+            "outcome": "ok"
+          },
+          {
+            "stage": "Writing evidence-based report",
+            "elapsedMs": 1281,
+            "outcome": "ok"
+          }
+        ],
+        "elapsedMs": 11598
+      },
+      "warnings": [
+        "Requested the complete clip if it ends within 180 seconds of 0s; otherwise coverage is partial. Speech and visual observations are model-derived, not frame-by-frame verification."
+      ],
+      "sources": [
+        {
+          "title": "Remarks at the White House Correspondents' Association Dinner | The American Presidency Project",
+          "url": "https://www.presidency.ucsb.edu/documents/remarks-the-white-house-correspondents-association-dinner-13"
+        },
+        {
+          "title": "President Obama complete remarks at 2015 White House Correspondents' Dinner (C-SPAN)",
+          "url": "https://www.youtube.com/watch?v=NM6d06ALBVA"
+        },
+        {
+          "title": "Full Text Obama Presidency April 25, 2015: Transcript of President Obama\u2019s White House Correspondents\u2019 Association dinner speech | History Musings",
+          "url": "https://historymusings.wordpress.com/2015/04/26/full-text-obama-presidency-april-25-2015-transcript-of-president-obamas-white-house-correspondents-association-dinner-speech/"
+        }
+      ],
+      "videos": [
+        {
+          "title": "President Obama complete remarks at 2015 White House Correspondents' Dinner (C-SPAN)",
+          "url": "https://www.youtube.com/watch?v=NM6d06ALBVA",
+          "indexedMatchedWords": 238,
+          "sampleCheck": {
+            "visual": "consistent",
+            "observations": "The candidate video features Barack Obama speaking at the White House Correspondents' Dinner, matching the reference video's setting, attire (tuxedo with bow tie), podium, and lower-third graphics.",
+            "scope": "First 90 seconds, sampled at 0.5 frames/second. Model comparison, not independent recording verification.",
+            "matchedWords": 0,
+            "clipWords": 384,
+            "status": "inconclusive"
+          }
+        },
+        {
+          "title": "2015 WHCD - Obama&#39;s anger translator  | Video | C-SPAN.org",
+          "url": "https://www.c-span.org/clip/public-affairs-event/2015-whcd-obamas-anger-translator/4573688",
+          "indexedMatchedWords": 0,
+          "sampleCheck": null
+        },
+        {
+          "title": "President Obama&#39;s Complete Remarks at 2016 WHCA Dinner | Video | C-SPAN.org",
+          "url": "https://www.c-span.org/clip/white-house-event/president-obamas-complete-remarks-at-2016-whca-dinner/4589435",
+          "indexedMatchedWords": 0,
+          "sampleCheck": null
+        },
+        {
+          "title": "User Clip: Old Joke | Video | C-SPAN.org",
+          "url": "https://www.c-span.org/clip/white-house-event/user-clip-old-joke/4597991",
+          "indexedMatchedWords": 0,
+          "sampleCheck": null
+        }
+      ]
+    },
+    {
+      "label": "user-tiktok-regression",
+      "runType": "cold",
+      "elapsedMs": 12869,
+      "status": "inconclusive",
+      "basis": "social_video",
+      "coverage": "Up to 180 seconds from 0s; model-reported ending: not established",
+      "metrics": {
+        "calls": {
+          "exa": 5,
+          "gemini": 4
+        },
+        "inputTokens": 17167,
+        "outputTokens": 626,
+        "estimatedCostUsd": 0.0067151,
+        "exaReportedCostUsd": 0.029,
+        "costNotes": [
+          "Gemini 3.5 Flash-Lite estimate: $0.30/M input and $2.50/M output including thinking; free credits may apply. Failed or cancelled requests may still incur unreported costs."
+        ],
+        "stages": [
+          {
+            "stage": "Checking public link",
+            "elapsedMs": 86,
+            "outcome": "ok"
+          },
+          {
+            "stage": "Retrieving public social video",
+            "elapsedMs": 2999,
+            "outcome": "ok"
+          },
+          {
+            "stage": "Extracting discovery clues",
+            "elapsedMs": 2053,
+            "outcome": "ok"
+          },
+          {
+            "stage": "Searching public indexes",
+            "elapsedMs": 915,
+            "outcome": "ok"
+          },
+          {
+            "stage": "Locating surrounding text and video candidates",
+            "elapsedMs": 938,
+            "outcome": "ok"
+          },
+          {
+            "stage": "Checking candidate video appearance and speech",
+            "elapsedMs": 5231,
+            "outcome": "ok"
+          },
+          {
+            "stage": "Writing evidence-based report",
+            "elapsedMs": 606,
+            "outcome": "ok"
+          }
+        ],
+        "elapsedMs": 12869
+      },
+      "warnings": [
+        "TikTok video retrieved directly. Up to 180 seconds inspected; sampled frames and transcription remain model-derived."
+      ],
+      "sources": [
+        {
+          "title": "Ben Shapiro vs. 25 Kamala Harris Voters | Surrounded",
+          "url": "https://www.youtube.com/watch?v=QK-liQhqPjs"
+        },
+        {
+          "title": "Dean Withers & Parker vs MAGA | Roundtable",
+          "url": "https://www.youtube.com/watch?v=ZpVInMyAbNU"
+        },
+        {
+          "title": "UNHINGED Republicans Get DESTROYED In 1v20 Jubilee Debate \u2014 Destiny \u2014 Rosetta",
+          "url": "https://rosetta.to/u/destiny/unhinged-republicans-get-destroyed-in-1v20-jubilee-debate"
+        }
+      ],
+      "videos": [
+        {
+          "title": "Ben Shapiro vs. 25 Kamala Harris Voters | Surrounded",
+          "url": "https://www.youtube.com/watch?v=QK-liQhqPjs",
+          "indexedMatchedWords": 0,
+          "sampleCheck": {
+            "visual": "consistent",
+            "observations": "The candidate video shows the exact same debate setting with Ben Shapiro seated opposite various participants. The first participant to approach the table is a man wearing a brown jacket and a bucket hat decorated with plastic flowers, matching the context of the reference clip discussions.",
+            "scope": "First 90 seconds, sampled at 0.5 frames/second. Model comparison, not independent recording verification.",
+            "matchedWords": 0,
+            "clipWords": 86,
+            "status": "inconclusive"
+          }
+        },
+        {
+          "title": "Kamala Harris attacks Joe Biden's record on race in Democratic debate - YouTube",
+          "url": "https://www.youtube.com/watch?v=S6-UC8yr0Aw",
+          "indexedMatchedWords": 0,
+          "sampleCheck": {
+            "visual": "consistent",
+            "observations": "The candidate video features Joe Biden and Kamala Harris in a debate setting, completely different from the reference video which shows a discussion panel with Charlie Kirk and another individual. There is no visual match.",
+            "scope": "First 90 seconds, sampled at 0.5 frames/second. Model comparison, not independent recording verification.",
+            "matchedWords": 0,
+            "clipWords": 86,
+            "status": "inconclusive"
+          }
+        },
+        {
+          "title": "WATCH: 'That little girl was me.' Harris goes after Biden on race | 2019 Democratic Debates",
+          "url": "https://www.youtube.com/watch?v=6vG1Tnuvo78",
+          "indexedMatchedWords": 0,
+          "sampleCheck": null
+        },
+        {
+          "title": "ABC Presidential Debate Clip on Race | Video | C-SPAN.org",
+          "url": "https://www.c-span.org/clip/campaign-2024/abc-presidential-debate-clip-on-race/5131788",
+          "indexedMatchedWords": 0,
+          "sampleCheck": null
+        },
+        {
+          "title": "User Clip: Kamala Harris attacks &#39;identity politics&#39; | Video | C-SPAN.org",
+          "url": "https://www.c-span.org/clip/public-affairs-event/user-clip-kamala-harris-attacks-identity-politics/4743566",
+          "indexedMatchedWords": 0,
+          "sampleCheck": null
+        }
+      ]
+    },
+    {
+      "label": "jobs-excerpt",
+      "runType": "warm",
+      "elapsedMs": 6532,
+      "status": "candidate",
+      "basis": "youtube_segment",
+      "coverage": "Up to 180 seconds from 0s; model-reported ending: reached",
+      "metrics": {
+        "calls": {
+          "exa": 5,
+          "gemini": 5
+        },
+        "inputTokens": 21493,
+        "outputTokens": 740,
+        "estimatedCostUsd": 0.008297899999999999,
+        "exaReportedCostUsd": 0.029,
+        "costNotes": [
+          "Gemini 3.5 Flash-Lite estimate: $0.30/M input and $2.50/M output including thinking; free credits may apply. Failed or cancelled requests may still incur unreported costs."
+        ],
+        "stages": [
+          {
+            "stage": "Checking public link",
+            "elapsedMs": 4,
+            "outcome": "ok"
+          },
+          {
+            "stage": "Extracting discovery clues",
+            "elapsedMs": 1700,
+            "outcome": "ok"
+          },
+          {
+            "stage": "Searching public indexes",
+            "elapsedMs": 740,
+            "outcome": "ok"
+          },
+          {
+            "stage": "Locating surrounding text and video candidates",
+            "elapsedMs": 686,
+            "outcome": "ok"
+          },
+          {
+            "stage": "Checking candidate video appearance and speech",
+            "elapsedMs": 2701,
+            "outcome": "ok"
+          },
+          {
+            "stage": "Writing evidence-based report",
+            "elapsedMs": 650,
+            "outcome": "ok"
+          }
+        ],
+        "elapsedMs": 6532
+      },
+      "warnings": [
+        "Requested the complete clip if it ends within 180 seconds of 0s; otherwise coverage is partial. Speech and visual observations are model-derived, not frame-by-frame verification."
+      ],
+      "sources": [
+        {
+          "title": "\u2018You\u2019ve got to find what you love,\u2019 Jobs says | Stanford Report",
+          "url": "https://news.stanford.edu/stories/2005/06/youve-got-find-love-jobs-says"
+        },
+        {
+          "title": "Steve Jobs - Commencement Address at Stanford University (as delivered)",
+          "url": "https://www.americanrhetoric.com/speeches/stevejobsstanfordcommencement.htm"
+        },
+        {
+          "title": "Steve Jobs' 2005 Stanford Commencement Address",
+          "url": "https://www.youtube.com/watch?v=UF8uR6Z6KLc"
+        }
+      ],
+      "videos": [
+        {
+          "title": "Steve Jobs Connect the Dots",
+          "url": "https://www.youtube.com/watch?v=5BSbOc5VYY8",
+          "indexedMatchedWords": 102,
+          "sampleCheck": {
+            "visual": "consistent",
+            "observations": "The candidate video matches the visual theme and historical footage of Steve Jobs delivering his Stanford commencement address, showing him wearing academic graduation attire at a podium outdoors with university flags, consistent with the biographical nature of the reference clip.",
+            "scope": "First 90 seconds, sampled at 0.5 frames/second. Model comparison, not independent recording verification.",
+            "matchedWords": 0,
+            "clipWords": 104,
+            "status": "inconclusive"
+          }
+        },
+        {
+          "title": "Steve Jobs' 2005 Stanford Commencement Address",
+          "url": "https://www.youtube.com/watch?v=UF8uR6Z6KLc",
+          "indexedMatchedWords": 101,
+          "sampleCheck": {
+            "visual": "consistent",
+            "observations": "The candidate video starts with the Stanford University logo and then cuts to the commencement speech by Steve Jobs at a podium wearing academic regalia, matching the reference footage context.",
+            "scope": "First 90 seconds, sampled at 0.5 frames/second. Model comparison, not independent recording verification.",
+            "matchedWords": 0,
+            "clipWords": 104,
+            "status": "inconclusive"
+          }
+        },
+        {
+          "title": "ENGLISH SPEECH | STEVE JOBS: Stanford Speech (English Subtitles)",
+          "url": "https://www.youtube.com/watch?v=1i9kcBHX2Nw",
+          "indexedMatchedWords": 64,
+          "sampleCheck": null
+        },
+        {
+          "title": "John Chambers, former Chairman/CEO of Cisco Systems, talks about his new book \"Connecting the Dots\" on Vimeo",
+          "url": "https://vimeo.com/414936217",
+          "indexedMatchedWords": 0,
+          "sampleCheck": null
+        },
+        {
+          "title": "What has been your journey? | Videos & Movies on Vimeo",
+          "url": "https://vimeo.com/809844507",
+          "indexedMatchedWords": 0,
+          "sampleCheck": null
+        }
+      ]
+    },
+    {
+      "label": "jobs-stock-footage-short",
+      "runType": "warm",
+      "elapsedMs": 1959,
+      "status": "input_error",
+      "basis": null,
+      "coverage": null,
+      "metrics": {
+        "calls": {
+          "exa": 1,
+          "gemini": 1
+        },
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "estimatedCostUsd": 0,
+        "exaReportedCostUsd": 0,
+        "costNotes": [],
+        "stages": [
+          {
+            "stage": "Checking public link",
+            "elapsedMs": 3,
+            "outcome": "ok"
+          },
+          {
+            "stage": "Extracting discovery clues",
+            "elapsedMs": 188,
+            "outcome": "PROVIDER_403"
+          },
+          {
+            "stage": "Trying indexed text fallback",
+            "elapsedMs": 1768,
+            "outcome": "RETRIEVAL_UNAVAILABLE"
+          }
+        ],
+        "elapsedMs": 1959
+      },
+      "warnings": [
+        "Requested the complete clip if it ends within 180 seconds of 0s; otherwise coverage is partial. Speech and visual observations are model-derived, not frame-by-frame verification.",
+        "Gemini denied access to this request. The video may be private/unavailable, or account permissions may restrict it.",
+        "This page is unavailable to the public index. Upload a short clip or paste its spoken quote."
+      ],
+      "sources": [],
+      "videos": []
+    },
+    {
+      "label": "obama-anger-translator-excerpt",
+      "runType": "warm",
+      "elapsedMs": 8480,
+      "status": "candidate",
+      "basis": "youtube_segment",
+      "coverage": "Up to 180 seconds from 0s; model-reported ending: not established",
+      "metrics": {
+        "calls": {
+          "exa": 5,
+          "gemini": 4
+        },
+        "inputTokens": 28869,
+        "outputTokens": 955,
+        "estimatedCostUsd": 0.011048200000000001,
+        "exaReportedCostUsd": 0.029,
+        "costNotes": [
+          "Gemini 3.5 Flash-Lite estimate: $0.30/M input and $2.50/M output including thinking; free credits may apply. Failed or cancelled requests may still incur unreported costs."
+        ],
+        "stages": [
+          {
+            "stage": "Checking public link",
+            "elapsedMs": 3,
+            "outcome": "ok"
+          },
+          {
+            "stage": "Extracting discovery clues",
+            "elapsedMs": 3781,
+            "outcome": "ok"
+          },
+          {
+            "stage": "Searching public indexes",
+            "elapsedMs": 581,
+            "outcome": "ok"
+          },
+          {
+            "stage": "Locating surrounding text and video candidates",
+            "elapsedMs": 810,
+            "outcome": "ok"
+          },
+          {
+            "stage": "Checking candidate video appearance and speech",
+            "elapsedMs": 2340,
+            "outcome": "ok"
+          },
+          {
+            "stage": "Writing evidence-based report",
+            "elapsedMs": 917,
+            "outcome": "ok"
+          }
+        ],
+        "elapsedMs": 8480
+      },
+      "warnings": [
+        "Requested the complete clip if it ends within 180 seconds of 0s; otherwise coverage is partial. Speech and visual observations are model-derived, not frame-by-frame verification."
+      ],
+      "sources": [
+        {
+          "title": "Remarks at the White House Correspondents' Association Dinner | The American Presidency Project",
+          "url": "https://www.presidency.ucsb.edu/documents/remarks-the-white-house-correspondents-association-dinner-13"
+        },
+        {
+          "title": "Full Text Obama Presidency April 25, 2015: Transcript of President Obama\u2019s White House Correspondents\u2019 Association dinner speech | History Musings",
+          "url": "https://historymusings.wordpress.com/2015/04/26/full-text-obama-presidency-april-25-2015-transcript-of-president-obamas-white-house-correspondents-association-dinner-speech/"
+        },
+        {
+          "title": "President Obama complete remarks at 2015 White House Correspondents' Dinner (C-SPAN)",
+          "url": "https://www.youtube.com/watch?v=NM6d06ALBVA"
+        }
+      ],
+      "videos": [
+        {
+          "title": "President Obama complete remarks at 2015 White House Correspondents' Dinner (C-SPAN)",
+          "url": "https://www.youtube.com/watch?v=NM6d06ALBVA",
+          "indexedMatchedWords": 238,
+          "sampleCheck": {
+            "visual": "consistent",
+            "observations": "Both videos feature Barack Obama speaking at a podium during the White House Correspondents' Dinner, wearing a black tuxedo with a bow tie. The candidate video expands into a montage of comedic clips and a skit with Keegan-Michael Key, but the opening and closing segments match the reference event setting.",
+            "scope": "First 90 seconds, sampled at 0.5 frames/second. Model comparison, not independent recording verification.",
+            "matchedWords": 19,
+            "clipWords": 382,
+            "status": "supported_sample"
+          }
+        },
+        {
+          "title": "President Obama&#39;s Complete Remarks at 2016 WHCA Dinner | Video | C-SPAN.org",
+          "url": "https://www.c-span.org/clip/white-house-event/president-obamas-complete-remarks-at-2016-whca-dinner/4589435",
+          "indexedMatchedWords": 0,
+          "sampleCheck": null
+        },
+        {
+          "title": "2015 WHCD - Obama&#39;s anger translator  | Video | C-SPAN.org",
+          "url": "https://www.c-span.org/clip/public-affairs-event/2015-whcd-obamas-anger-translator/4573688",
+          "indexedMatchedWords": 0,
+          "sampleCheck": null
+        },
+        {
+          "title": "User Clip: The Red Wedding | Video | C-SPAN.org",
+          "url": "https://www.c-span.org/clip/white-house-event/user-clip-the-red-wedding/4591639",
+          "indexedMatchedWords": 0,
+          "sampleCheck": null
+        }
+      ]
+    }
+  ]
+}
